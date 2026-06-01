@@ -50,12 +50,14 @@ Write `package.json`:
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
     "@decky/ui": "^4.11.4",
-    "@rollup/rollup-win32-x64-msvc": "^4.53.3",
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
     "@types/webpack": "^5.28.5",
     "rollup": "^4.53.3",
     "typescript": "^5.6.2"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.53.3"
   },
   "dependencies": {
     "@decky/api": "^1.1.3",
@@ -562,9 +564,9 @@ async def download_lua(
     Tries all available API sources in order. Returns the path to the
     installed .lua file on success, or None on failure. Emits progress
     events via decky.emit() during the process.
-
-    To use decky.emit, the caller must pass the decky module reference.
     """
+    # Deferred import: decky module is only available inside the plugin
+    # runtime (provided by Decky Loader), not during import-time of this file.
     import decky
 
     steam_path = get_steam_path()
@@ -963,9 +965,9 @@ class Plugin:
         asyncio.ensure_future(_run())
         return task_id
 
-    async def cancel_download(self, task_id: str) -> bool:
+    async def cancel_download(self, task_id: str) -> None:
         """Cancel an in-progress download."""
-        return cancel_task(task_id)
+        cancel_task(task_id)
 
     async def start_download_from_url(self, url: str, appid: int) -> str:
         """Download Lua from a custom URL (for future use)."""
@@ -1047,19 +1049,18 @@ class Plugin:
         """Return current settings."""
         return _read_settings()
 
-    async def set_setting(self, key: str, value: Any) -> bool:
-        """Update a single setting. Returns True on success."""
+    async def set_setting(self, key: str, value: Any) -> None:
+        """Update a single setting. Silently ignores unknown keys/invalid types."""
         if key not in _DEFAULT_SETTINGS:
-            return False
+            return
         # Validate types
         if isinstance(_DEFAULT_SETTINGS[key], bool) and not isinstance(value, bool):
-            return False
+            return
         if isinstance(_DEFAULT_SETTINGS[key], str) and not isinstance(value, str):
-            return False
+            return
         settings = _read_settings()
         settings[key] = value
         _write_settings(settings)
-        return True
 ```
 
 - [ ] **Step 2: Verify main.py imports**
@@ -1073,7 +1074,176 @@ Expected: `main.py loads OK` (may warn about missing env vars for decky, that's 
 
 ---
 
-### Task 7: Frontend — Plugin Entry & QAM Router (`src/index.tsx`)
+### Task 7: Backend — Unit Tests
+
+**Files:**
+- Create: `tests/__init__.py`
+- Create: `tests/test_steam_paths.py`
+- Create: `tests/test_api_manifest.py`
+- Create: `tests/test_downloads.py`
+
+**Dependency:** Install `pytest` and `pytest-asyncio`:
+
+```bash
+pip install pytest pytest-asyncio
+```
+
+- [ ] **Step 1: Write test_steam_paths.py**
+
+Write `tests/test_steam_paths.py`:
+```python
+"""Unit tests for Steam path detection."""
+import sys
+from unittest.mock import patch, MagicMock
+from pathlib import Path
+from backend.steam_paths import get_steam_path, get_lua_dir, get_loaded_apps_file
+
+
+class TestGetSteamPath:
+    def test_registry_returns_valid_path(self):
+        with patch("backend.steam_paths._from_registry", return_value="C:\\Steam"):
+            assert get_steam_path() == "C:\\Steam"
+
+    def test_falls_back_to_env(self):
+        with patch("backend.steam_paths._from_registry", return_value=None), \
+             patch("backend.steam_paths._from_env", return_value="/opt/steam"):
+            assert get_steam_path() == "/opt/steam"
+
+    def test_falls_back_to_known_paths(self):
+        with patch("backend.steam_paths._from_registry", return_value=None), \
+             patch("backend.steam_paths._from_env", return_value=None), \
+             patch("backend.steam_paths._from_known_paths", return_value="/default/steam"):
+            assert get_steam_path() == "/default/steam"
+
+    def test_all_methods_fail_returns_none(self):
+        with patch("backend.steam_paths._from_registry", return_value=None), \
+             patch("backend.steam_paths._from_env", return_value=None), \
+             patch("backend.steam_paths._from_known_paths", return_value=None):
+            assert get_steam_path() is None
+
+
+def test_get_lua_dir():
+    result = get_lua_dir("C:\\Steam")
+    assert isinstance(result, Path)
+    assert str(result).endswith("stplug-in")
+
+
+def test_get_loaded_apps_file():
+    result = get_loaded_apps_file("C:\\Steam")
+    assert isinstance(result, Path)
+    assert result.name == "loadedappids.txt"
+```
+
+- [ ] **Step 2: Write test_api_manifest.py**
+
+Write `tests/test_api_manifest.py`:
+```python
+"""Unit tests for API manifest normalisation and filtering."""
+import json
+import pytest
+from backend.api_manifest import (
+    _normalize_json,
+    filter_sources,
+    _get_default_sources,
+)
+
+
+class TestNormalizeJson:
+    def test_removes_trailing_commas(self):
+        result = _normalize_json('{"a": 1,}')
+        parsed = json.loads(result)
+        assert parsed == {"a": 1}
+
+    def test_removes_trailing_commas_in_arrays(self):
+        result = _normalize_json('[1, 2,]')
+        parsed = json.loads(result)
+        assert parsed == [1, 2]
+
+    def test_adds_missing_closing_braces(self):
+        result = _normalize_json('{"a": {"b": 1}')
+        parsed = json.loads(result)
+        assert parsed == {"a": {"b": 1}}
+
+    def test_adds_missing_closing_brackets(self):
+        result = _normalize_json('{"a": [1, 2')
+        parsed = json.loads(result)
+        assert parsed == {"a": [1, 2]}
+
+    def test_valid_json_unchanged(self):
+        original = '{"a": 1}'
+        result = _normalize_json(original)
+        assert json.loads(result) == {"a": 1}
+
+
+class TestFilterSources:
+    def test_hides_morrenus_without_api_key(self):
+        sources = [
+            {"name": "Morrenus", "url": "https://example.com/<moapikey>/stuff", "enabled": True},
+            {"name": "Ryuu", "url": "https://other.com/<appid>", "enabled": True},
+        ]
+        result = filter_sources(sources, api_key="")
+        names = [s["name"] for s in result]
+        assert "Ryuu" in names
+        assert "Morrenus" not in names
+
+    def test_shows_morrenus_with_api_key(self):
+        sources = [
+            {"name": "Morrenus", "url": "https://example.com/<moapikey>/stuff", "enabled": True},
+        ]
+        result = filter_sources(sources, api_key="abc123")
+        assert len(result) == 1
+        assert result[0]["name"] == "Morrenus"
+
+
+def test_default_sources_has_four_entries():
+    defaults = _get_default_sources()
+    assert len(defaults) == 4
+    names = {s["name"] for s in defaults}
+    assert names == {"Morrenus", "Ryuu", "TwentyTwo Cloud", "Sushi"}
+```
+
+- [ ] **Step 3: Write test_downloads.py**
+
+Write `tests/test_downloads.py`:
+```python
+"""Unit tests for the download pipeline helpers."""
+import pytest
+from backend.downloads import _substitute_url
+
+
+class TestSubstituteUrl:
+    def test_replaces_appid(self):
+        result = _substitute_url("https://api.example/<appid>/lua", 730, "")
+        assert result == "https://api.example/730/lua"
+
+    def test_replaces_moapikey(self):
+        result = _substitute_url("https://api.example/<appid>?key=<moapikey>", 730, "secret")
+        assert result == "https://api.example/730?key=secret"
+
+    def test_keeps_placeholder_without_key(self):
+        result = _substitute_url("https://api.example/<appid>?key=<moapikey>", 730, "")
+        assert result == "https://api.example/730?key=<moapikey>"
+```
+
+- [ ] **Step 4: Run the test suite**
+
+Run:
+```bash
+python -m pytest tests/ -v
+```
+
+Expected: All tests pass. At minimum:
+```
+tests/test_steam_paths.py ....
+tests/test_api_manifest.py ........
+tests/test_downloads.py ....
+```
+
+> **Note:** The download pipeline's HTTP-dependent functions (`download_lua`, `resolve_app_name`, `fetch_manifest`) are tested via manual integration (Task 13, Step 3). Unit-testing them with mocked `httpx` is deferred to avoid over-engineering the test harness for the initial build.
+
+---
+
+### Task 8: Frontend — Plugin Entry & QAM Router (`src/index.tsx`)
 
 **Files:**
 - Create: `src/index.tsx`
@@ -1153,13 +1323,13 @@ export default definePlugin(() => {
   console.log("STPlugin initializing");
 
   // QAM routes — sub-components imported statically above
-  routerHook.addRoute("/stplugin", MainPanel);
-  routerHook.addRoute("/stplugin/download", () => <DownloadPanel />);
-  routerHook.addRoute("/stplugin/installed", () => <InstalledApps />);
-  routerHook.addRoute("/stplugin/settings", () => <SettingsPanel />);
+  routerHook.addRoute("/stplugin", MainPanel, { exact: true });
+  routerHook.addRoute("/stplugin/download", () => <DownloadPanel />, { exact: true });
+  routerHook.addRoute("/stplugin/installed", () => <InstalledApps />, { exact: true });
+  routerHook.addRoute("/stplugin/settings", () => <SettingsPanel />, { exact: true });
 
-  // Store button patch
-  registerStoreButtonPatch();
+  // Store button patch — capture unpatch for cleanup
+  const storeButtonUnpatch = registerStoreButtonPatch();
 
   return {
     name: "STPlugin",
@@ -1172,6 +1342,7 @@ export default definePlugin(() => {
       routerHook.removeRoute("/stplugin/download");
       routerHook.removeRoute("/stplugin/installed");
       routerHook.removeRoute("/stplugin/settings");
+      storeButtonUnpatch?.unpatch?.();  // Remove the store page patch
     },
   };
 });
@@ -1242,7 +1413,7 @@ Expected: `dist/index.js` is created. Build succeeds.
 
 ---
 
-### Task 8: Frontend — Download Panel (`src/components/DownloadPanel.tsx`)
+### Task 9: Frontend — Download Panel (`src/components/DownloadPanel.tsx`)
 
 **Files:**
 - Modify: `src/components/DownloadPanel.tsx` (overwrite placeholder)
@@ -1257,6 +1428,7 @@ import {
   ButtonItem,
   TextField,
   DropdownItem,
+  SingleDropdownOption,
   Navigation,
   staticClasses,
 } from "@decky/ui";
@@ -1266,7 +1438,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const getAppName = callable<[number], string>("get_app_name");
 const startDownload = callable<[number, string?], string>("start_download");
-const cancelDownload = callable<[string], boolean>("cancel_download");
+const cancelDownload = callable<[string], void>("cancel_download");
 const getApiSources = callable<[], { name: string; url: string }[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
 
@@ -1295,16 +1467,21 @@ export function DownloadPanel() {
 
   // Load API sources and settings on mount
   useEffect(() => {
-    getApiSources().then(setSources);
-    getSettings().then((s) => setFastDownload(s.fastDownload));
+    getApiSources().then(setSources).catch(() => {
+      console.warn("[STPlugin] Failed to load API sources");
+    });
+    getSettings().then((s) => setFastDownload(s.fastDownload)).catch(() => {
+      // Use defaults if settings are unavailable
+      setFastDownload(false);
+    });
   }, []);
 
   // Listen for download progress events
   useEffect(() => {
-    const listener = addEventListener<[DownloadProgress]>(
+    const listener = addEventListener<[string, DownloadProgress]>(
       "download_progress",
-      (progress) => {
-        if (progress.task_id === currentTaskId) {
+      (taskId, progress) => {
+        if (taskId === currentTaskId) {
           setDownloadState(progress);
           if (progress.phase === "done") {
             toaster.toast({
@@ -1384,16 +1561,14 @@ export function DownloadPanel() {
         <PanelSectionRow>
           <DropdownItem
             label="API Source"
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-          >
-            <option value="">Auto (try all)</option>
-            {sources.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </DropdownItem>
+            description="Choose a download source or leave as Auto"
+            rgOptions={[
+              { data: "", label: "Auto (try all)" },
+              ...sources.map((s) => ({ data: s.name, label: s.name })),
+            ]}
+            selectedOption={selectedSource}
+            onChange={(opt) => setSelectedSource(opt.data as string)}
+          />
         </PanelSectionRow>
       )}
       <PanelSectionRow>
@@ -1438,7 +1613,7 @@ Expected: Build succeeds.
 
 ---
 
-### Task 9: Frontend — Installed Apps Panel (`src/components/InstalledApps.tsx`)
+### Task 10: Frontend — Installed Apps Panel (`src/components/InstalledApps.tsx`)
 
 **Files:**
 - Modify: `src/components/InstalledApps.tsx` (overwrite placeholder)
@@ -1470,8 +1645,13 @@ export function InstalledApps() {
   const [apps, setApps] = useState<InstalledApp[]>([]);
 
   const loadApps = async () => {
-    const result = await getInstalledApps();
-    setApps(result);
+    try {
+      const result = await getInstalledApps();
+      setApps(result);
+    } catch {
+      console.warn("[STPlugin] Failed to load installed apps");
+      setApps([]);
+    }
   };
 
   useEffect(() => {
@@ -1536,7 +1716,7 @@ Expected: Build succeeds.
 
 ---
 
-### Task 10: Frontend — Settings Panel (`src/components/SettingsPanel.tsx`)
+### Task 11: Frontend — Settings Panel (`src/components/SettingsPanel.tsx`)
 
 **Files:**
 - Modify: `src/components/SettingsPanel.tsx` (overwrite placeholder)
@@ -1557,7 +1737,7 @@ import { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
 
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
-const setSetting = callable<[string, any], boolean>("set_setting");
+const setSetting = callable<[string, any], void>("set_setting");
 const refreshApiManifest = callable<[], { name: string; url: string }[]>("refresh_api_manifest");
 
 export function SettingsPanel() {
@@ -1572,10 +1752,8 @@ export function SettingsPanel() {
   }, []);
 
   const handleFastDownload = async (checked: boolean) => {
-    const ok = await setSetting("fastDownload", checked);
-    if (ok) {
-      setFastDownload(checked);
-    }
+    setFastDownload(checked);
+    await setSetting("fastDownload", checked);
   };
 
   const handleApiKeyChange = async (value: string) => {
@@ -1629,7 +1807,7 @@ Expected: Build succeeds.
 
 ---
 
-### Task 11: Frontend — Store Page Button Patch (`src/patches/storeButton.tsx`)
+### Task 12: Frontend — Store Page Button Patch (`src/patches/storeButton.tsx`)
 
 **Files:**
 - Modify: `src/patches/storeButton.tsx` (overwrite placeholder)
@@ -1727,10 +1905,10 @@ function StoreButton({ appid, isDLC }: { appid: number; isDLC: boolean }) {
         message?: string;
         appid?: number;
       }
-      const listener = addEventListener<[Progress]>(
+      const listener = addEventListener<[string, Progress]>(
         "download_progress",
-        (progress: Progress) => {
-          if (progress.task_id !== taskId) return;
+        (eventTaskId: string, progress: Progress) => {
+          if (eventTaskId !== taskId) return;
           if (progress.phase === "done") {
             toaster.toast({
               title: "STPlugin",
@@ -1783,9 +1961,11 @@ pnpm run build
 
 Expected: Build succeeds (the `findModuleExport` call resolves at runtime).
 
+> **⚠️ HIGH RISK:** The `findModuleExport` fingerprint strings (`"StoreGamePage"`, `"appdetails"`) are speculative and may not match Steam's actual internals. This is the most fragile component in the plugin. On first deployment, verify the button appears on a game store page. If not, use Decky's `SteamClient.BrowserView` or `SteamClient.BrowserWindow.ExecuteJavaScript` to inspect the React tree and find the correct component fingerprint. The fallback behavior (silently not injecting the button) is safe — no crash.
+
 ---
 
-### Task 12: Final Build & Manual Testing Checklist
+### Task 13: Final Build & Manual Testing Checklist
 
 **Files:**
 - None new (verification only)
@@ -1823,6 +2003,10 @@ src/components/DownloadPanel.tsx
 src/components/InstalledApps.tsx
 src/components/SettingsPanel.tsx
 src/patches/storeButton.tsx
+tests/__init__.py
+tests/test_api_manifest.py
+tests/test_downloads.py
+tests/test_steam_paths.py
 dist/index.js
 docs/superpowers/plans/2026-06-01-stplugin-lean-core.md
 docs/superpowers/specs/2026-06-01-ltsteamplugin-decky-port-design.md
