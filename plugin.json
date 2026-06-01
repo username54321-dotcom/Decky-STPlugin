@@ -1,0 +1,11 @@
+{
+  "name": "STPlugin",
+  "author": "",
+  "flags": ["debug"],
+  "api_version": 1,
+  "publish": {
+    "tags": [],
+    "description": "Lua script downloader for Steam games — port of LTSteamPlugin to Decky Loader.",
+    "image": ""
+  }
+}
