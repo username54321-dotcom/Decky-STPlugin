@@ -22,11 +22,22 @@ def _normalize_json(text: str) -> str:
     """Fix common JSON issues: trailing commas, missing closing braces."""
     # Remove trailing commas before ] or }
     text = re.sub(r",\s*([}\]])", r"\1", text)
-    # Count braces and add missing closing ones
-    open_braces = text.count("{") - text.count("}")
-    open_brackets = text.count("[") - text.count("]")
-    text += "}" * max(0, open_braces)
-    text += "]" * max(0, open_brackets)
+    # Track nesting order to close properly
+    stack = []
+    for ch in text:
+        if ch == "{":
+            stack.append("}")
+        elif ch == "[":
+            stack.append("]")
+        elif ch == "}":
+            if stack and stack[-1] == "}":
+                stack.pop()
+        elif ch == "]":
+            if stack and stack[-1] == "]":
+                stack.pop()
+    # Add missing closing tokens in reverse nesting order
+    for ch in reversed(stack):
+        text += ch
     return text
 
 

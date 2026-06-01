@@ -1,0 +1,1 @@
+# STPlugin test suite
