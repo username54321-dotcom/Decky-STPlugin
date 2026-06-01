@@ -13,6 +13,7 @@ import {
   toaster,
   routerHook,
 } from "@decky/api";
+import React from "react";
 import { FaDownload } from "react-icons/fa";
 
 import { DownloadPanel } from "./components/DownloadPanel";

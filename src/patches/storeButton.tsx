@@ -1,6 +1,6 @@
 import { findModuleExport, afterPatch } from "@decky/ui";
 import { callable, addEventListener, removeEventListener, toaster } from "@decky/api";
-import { useState } from "react";
+import React, { useState } from "react";
 
 const startDownload = callable<[number, string?], string>("start_download");
 const getSettings = callable<[], { fastDownload: boolean }>("get_settings");

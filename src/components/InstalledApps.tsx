@@ -5,8 +5,8 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
+import React, { useState, useEffect } from "react";
 import { FaDownload, FaTrash, FaRedo } from "react-icons/fa";
-import { useState, useEffect } from "react";
 
 const getInstalledApps = callable<[], { appid: number; name: string }[]>("get_installed_apps");
 const deleteApp = callable<[number], boolean>("delete_app");

@@ -6,7 +6,7 @@ import {
   ButtonItem,
 } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
 
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");

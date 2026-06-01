@@ -9,8 +9,8 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { callable, addEventListener, removeEventListener, toaster } from "@decky/api";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaDownload, FaTrash, FaArrowLeft } from "react-icons/fa";
-import { useState, useEffect, useCallback } from "react";
 
 const getAppName = callable<[number], string>("get_app_name");
 const startDownload = callable<[number, string?], string>("start_download");
