@@ -1,2 +1,7 @@
 ltsteamplugin
 node_modules
+
+__pycache__/
+*.pyc
+
+dist/
