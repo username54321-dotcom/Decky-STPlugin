@@ -5,10 +5,16 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 import decky
+
+# Ensure the plugin root is on sys.path so the backend package resolves
+_PLUGIN_DIR = Path(__file__).resolve().parent
+if str(_PLUGIN_DIR) not in sys.path:
+    sys.path.insert(0, str(_PLUGIN_DIR))
 
 from backend.steam_paths import get_steam_path, get_loaded_apps_file
 from backend.downloads import (
@@ -67,6 +73,26 @@ class Plugin:
     async def _unload(self) -> None:
         """Cleanup on plugin unload."""
         decky.logger.info("STPlugin unloading")
+
+    # ── Store Tab Discovery ──
+
+    async def find_store_tab(self) -> str | None:
+        """Discover the CEF tab ID for store.steampowered.com via CDP."""
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get("http://localhost:8080/json")
+                resp.raise_for_status()
+                tabs = resp.json()
+                for tab in tabs:
+                    if isinstance(tab, dict) and tab.get("type") == "page":
+                        url = tab.get("url", "")
+                        if "store.steampowered.com" in url:
+                            return str(tab.get("id", "")) or None
+                return None
+        except Exception as exc:
+            decky.logger.warn(f"Failed to query CDP tabs: {exc}")
+            return None
 
     # ── Steam Path ──
 
