@@ -6,7 +6,7 @@ Port **LTSteamPlugin** (a Millennium desktop Steam plugin) to **Decky Loader** (
 
 ## Current State
 
-**Phase: Design.** Feature triage complete (see `docs/superpowers/specs/2026-06-01-ltsteamplugin-decky-port-design.md`). Scope locked to **Approach A: Lean Core** — download pipeline + store button + QAM panel. No Decky plugin code exists yet. Next step: implementation plan, then build.
+**Phase: Build — Tasks 1-12 complete.** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) and store page button patch (storeButton.tsx) are implemented. Tests pass (17/17). Build produces dist/index.js. Next: Task 13 (final build, manual testing, commit).
 
 ## Target Platform
 
