@@ -8,53 +8,22 @@ import {
 import {
   definePlugin,
   routerHook,
-  callable,
-  toaster,
 } from "@decky/api";
-import React, { useState } from "react";
+import React from "react";
 import { FaDownload } from "react-icons/fa";
-
-import { DownloadPanel } from "./components/DownloadPanel";
-import { InstalledApps } from "./components/InstalledApps";
-import { SettingsPanel } from "./components/SettingsPanel";
-
-const restartSteam = callable<[], { success: boolean; error?: string }>("restart_steam");
+import { RestartButton } from "./shared/components/RestartButton";
+import { ROUTES, PLUGIN_NAME } from "./shared/constants";
+import { DownloadPanel } from "./download/DownloadPanel";
+import { InstalledApps } from "./installed/InstalledApps";
+import { SettingsPanel } from "./settings/SettingsPanel";
 
 function MainPanel() {
-  const [restartState, setRestartState] = useState<"idle" | "confirming" | "restarting">("idle");
-
-  const handleRestartClick = () => {
-    if (restartState === "idle") {
-      setRestartState("confirming");
-    }
-  };
-
-  const handleRestartCancel = () => {
-    setRestartState("idle");
-  };
-
-  const handleRestartConfirm = async () => {
-    setRestartState("restarting");
-    try {
-      const result = await restartSteam();
-      if (result.success) {
-        toaster.toast({ title: "STPlugin", body: "Steam is restarting..." });
-      } else {
-        toaster.toast({ title: "Restart Failed", body: result.error || "Unknown error" });
-        setRestartState("idle");
-      }
-    } catch (err: any) {
-      toaster.toast({ title: "Restart Failed", body: String(err) });
-      setRestartState("idle");
-    }
-  };
-
   return (
-    <PanelSection title="STPlugin">
+    <PanelSection title={PLUGIN_NAME}>
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={() => Navigation.Navigate("/stplugin/download")}
+          onClick={() => Navigation.Navigate(ROUTES.download)}
         >
           Download Lua Script
         </ButtonItem>
@@ -62,7 +31,7 @@ function MainPanel() {
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={() => Navigation.Navigate("/stplugin/installed")}
+          onClick={() => Navigation.Navigate(ROUTES.installed)}
         >
           Installed Scripts
         </ButtonItem>
@@ -70,61 +39,36 @@ function MainPanel() {
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={() => Navigation.Navigate("/stplugin/settings")}
+          onClick={() => Navigation.Navigate(ROUTES.settings)}
         >
           Settings
         </ButtonItem>
       </PanelSectionRow>
 
-      {/* Restart Steam — with inline confirmation */}
-      <PanelSectionRow>
-        {restartState === "confirming" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <div className={staticClasses.Label} style={{ color: "var(--gpSystemYellow)", marginBottom: "4px" }}>
-              Restart Steam?
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <ButtonItem layout="below" onClick={handleRestartCancel}>
-                Cancel
-              </ButtonItem>
-              <ButtonItem layout="below" onClick={handleRestartConfirm}>
-                Yes, restart
-              </ButtonItem>
-            </div>
-          </div>
-        ) : (
-          <ButtonItem
-            layout="below"
-            onClick={handleRestartClick}
-            disabled={restartState === "restarting"}
-          >
-            {restartState === "restarting" ? "Restarting..." : "Restart Steam"}
-          </ButtonItem>
-        )}
-      </PanelSectionRow>
+      <RestartButton />
     </PanelSection>
   );
 }
 
 export default definePlugin(() => {
-  console.log("STPlugin initializing");
+  console.log(`${PLUGIN_NAME} initializing`);
 
-  routerHook.addRoute("/stplugin", MainPanel, { exact: true });
-  routerHook.addRoute("/stplugin/download", () => <DownloadPanel />, { exact: true });
-  routerHook.addRoute("/stplugin/installed", () => <InstalledApps />, { exact: true });
-  routerHook.addRoute("/stplugin/settings", () => <SettingsPanel />, { exact: true });
+  routerHook.addRoute(ROUTES.main, MainPanel, { exact: true });
+  routerHook.addRoute(ROUTES.download, () => <DownloadPanel />, { exact: true });
+  routerHook.addRoute(ROUTES.installed, () => <InstalledApps />, { exact: true });
+  routerHook.addRoute(ROUTES.settings, () => <SettingsPanel />, { exact: true });
 
   return {
-    name: "STPlugin",
-    titleView: <div className={staticClasses.Title}>STPlugin</div>,
+    name: PLUGIN_NAME,
+    titleView: <div className={staticClasses.Title}>{PLUGIN_NAME}</div>,
     content: <MainPanel />,
     icon: <FaDownload />,
     onDismount() {
-      console.log("STPlugin unloading");
-      routerHook.removeRoute("/stplugin");
-      routerHook.removeRoute("/stplugin/download");
-      routerHook.removeRoute("/stplugin/installed");
-      routerHook.removeRoute("/stplugin/settings");
+      console.log(`${PLUGIN_NAME} unloading`);
+      routerHook.removeRoute(ROUTES.main);
+      routerHook.removeRoute(ROUTES.download);
+      routerHook.removeRoute(ROUTES.installed);
+      routerHook.removeRoute(ROUTES.settings);
     },
   };
 });

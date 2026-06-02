@@ -1,19 +1,13 @@
 import React from "react";
 import { staticClasses } from "@decky/ui";
-
-export interface GameSearchResult {
-  id: number;
-  name: string;
-  img: string;
-}
+import type { GameSearchResult } from "../shared/types";
 
 export interface GameSearchDropdownProps {
   results: GameSearchResult[];
   onSelect: (result: GameSearchResult) => void;
-  onClose: () => void;
 }
 
-export function GameSearchDropdown({ results, onSelect, onClose }: GameSearchDropdownProps) {
+export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProps) {
   if (results.length === 0) {
     return (
       <div

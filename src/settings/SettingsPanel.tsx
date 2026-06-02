@@ -8,8 +8,10 @@ import {
 import { callable, toaster } from "@decky/api";
 import React, { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
+import type { Settings } from "../shared/types";
+import { SETTINGS_KEYS } from "../shared/constants";
 
-const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
+const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
 const refreshApiManifest = callable<[], { name: string; url: string }[]>("refresh_api_manifest");
 
@@ -26,12 +28,12 @@ export function SettingsPanel() {
 
   const handleFastDownload = async (checked: boolean) => {
     setFastDownload(checked);
-    await setSetting("fastDownload", checked);
+    await setSetting(SETTINGS_KEYS.fastDownload, checked);
   };
 
   const handleApiKeyChange = async (value: string) => {
     setApiKey(value);
-    await setSetting("morrenusApiKey", value);
+    await setSetting(SETTINGS_KEYS.apiKey, value);
   };
 
   const handleRefresh = async () => {

@@ -6,16 +6,12 @@ import {
 } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState, useEffect } from "react";
-import { FaDownload, FaTrash, FaRedo } from "react-icons/fa";
+import { FaTrash, FaRedo } from "react-icons/fa";
+import type { InstalledApp } from "../shared/types";
 
-const getInstalledApps = callable<[], { appid: number; name: string }[]>("get_installed_apps");
+const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
 const deleteApp = callable<[number], boolean>("delete_app");
 const startDownload = callable<[number, string?], string>("start_download");
-
-interface InstalledApp {
-  appid: number;
-  name: string;
-}
 
 export function InstalledApps() {
   const [apps, setApps] = useState<InstalledApp[]>([]);
@@ -64,9 +60,7 @@ export function InstalledApps() {
       {apps.map((app) => (
         <PanelSectionRow key={app.appid}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span>
-              {app.name || `App ${app.appid}`}
-            </span>
+            <span>{app.name || `App ${app.appid}`}</span>
             <ButtonItem onClick={() => handleRedownload(app.appid)}>
               <FaRedo />
             </ButtonItem>
