@@ -4,18 +4,14 @@ import {
   TextField,
   DropdownItem,
   staticClasses,
-  ControlsList,
-  SteamSpinner,
 } from "@decky/ui";
 import { callable } from "@decky/api";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { GameSearchDropdown } from "./GameSearchDropdown";
 import { useDebouncedSearch } from "./hooks/useDebouncedSearch";
 import type { GameSearchResult } from "../shared/types";
 import type { ApiSource } from "../shared/types";
-import { SPACING } from "../shared/styles";
 
-const getAppName = callable<[number], string>("get_app_name");
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
 
@@ -29,18 +25,16 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const [sources, setSources] = useState<ApiSource[]>([]);
   const [selectedSource, setSelectedSource] = useState("");
   const [fastDownload, setFastDownload] = useState(false);
-  const [inputMode, setInputMode] = useState<"appid" | "search">("appid");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [resolving, setResolving] = useState(false);
 
-  const { results: searchResults, searching } = useDebouncedSearch(searchQuery, inputMode);
+  const { results: searchResults, searching } = useDebouncedSearch(searchQuery);
 
   useEffect(() => {
-    if (inputMode === "search" && searchQuery.trim()) {
+    if (searchQuery.trim()) {
       setSearchOpen(searchResults.length > 0);
     }
-  }, [searchResults, inputMode, searchQuery]);
+  }, [searchResults, searchQuery]);
 
   useEffect(() => {
     getApiSources().then(setSources).catch(() => {
@@ -51,40 +45,11 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     });
   }, []);
 
-  const resolveName = useCallback(async () => {
-    const id = parseInt(appidInput);
-    if (isNaN(id) || id <= 0) {
-      setResolvedName("");
-      return;
-    }
-    setResolvedName("");
-    setResolving(true);
-    try {
-      const name = await getAppName(id);
-      setResolvedName(name);
-    } catch {
-      setResolvedName("");
-    } finally {
-      setResolving(false);
-    }
-  }, [appidInput]);
-
   const handleSearchSelect = (result: GameSearchResult) => {
     setAppidInput(String(result.id));
     setResolvedName(result.name);
     setSearchOpen(false);
     setSearchQuery("");
-  };
-
-  const handleModeChange = (mode: "appid" | "search") => {
-    if (mode === "appid") {
-      setSearchOpen(false);
-      setSearchQuery("");
-    } else {
-      setAppidInput("");
-      setResolvedName("");
-    }
-    setInputMode(mode);
   };
 
   const handleStart = () => {
@@ -98,115 +63,49 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   return (
     <>
       <PanelSectionRow>
-        <ControlsList spacing="standard">
-          <ButtonItem
-            layout="below"
-            onClick={() => handleModeChange("appid")}
-            disabled={inputMode === "appid"}
-          >
-            App ID
-          </ButtonItem>
-          <ButtonItem
-            layout="below"
-            onClick={() => handleModeChange("search")}
-            disabled={inputMode === "search"}
-          >
-            Search
-          </ButtonItem>
-        </ControlsList>
+        <TextField
+          label="Game Name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </PanelSectionRow>
-
-      {inputMode === "appid" && (
-        <>
-          <PanelSectionRow>
-            <TextField
-              label="App ID"
-              value={appidInput}
-              onChange={(e) => setAppidInput(e.target.value)}
-              onBlur={resolveName}
-            />
-          </PanelSectionRow>
-          {resolvedName && (
-            <PanelSectionRow>
-              <div className={staticClasses.Label}>{resolvedName}</div>
-            </PanelSectionRow>
-          )}
-          {resolving && (
-            <PanelSectionRow>
-              <div style={{ display: "flex", alignItems: "center", gap: SPACING.controlsGap }}>
-                <SteamSpinner />
-                <span className={staticClasses.Label} style={{ color: "var(--gpSystemLighterGrey)" }}>
-                  Resolving game name...
-                </span>
-              </div>
-            </PanelSectionRow>
-          )}
-          {!fastDownload && sources.length > 0 && (
-            <PanelSectionRow>
-              <DropdownItem
-                label="API Source"
-                description="Choose a download source or leave as Auto"
-                rgOptions={[
-                  { data: "", label: "Auto (try all)" },
-                  ...sources.map((s) => ({ data: s.name, label: s.name })),
-                ]}
-                selectedOption={selectedSource}
-                onChange={(opt) => setSelectedSource(opt.data as string)}
-              />
-            </PanelSectionRow>
-          )}
-        </>
+      {searchOpen && (
+        <PanelSectionRow>
+          <GameSearchDropdown
+            results={searchResults}
+            onSelect={handleSearchSelect}
+          />
+        </PanelSectionRow>
       )}
-
-      {inputMode === "search" && (
-        <>
-          <PanelSectionRow>
-            <TextField
-              label="Game Name"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </PanelSectionRow>
-          {searchOpen && (
-            <PanelSectionRow>
-              <GameSearchDropdown
-                results={searchResults}
-                onSelect={handleSearchSelect}
-              />
-            </PanelSectionRow>
-          )}
-          {!searchOpen && searchQuery.trim() && searchResults.length === 0 && !searching && (
-            <PanelSectionRow>
-              <div
-                className={staticClasses.Label}
-                style={{ color: "var(--gpSystemLighterGrey)", fontSize: "13px" }}
-              >
-                No results found
-              </div>
-            </PanelSectionRow>
-          )}
-          {resolvedName && !searchOpen && (
-            <PanelSectionRow>
-              <div className={staticClasses.Label}>{resolvedName}</div>
-            </PanelSectionRow>
-          )}
-          {!fastDownload && sources.length > 0 && (
-            <PanelSectionRow>
-              <DropdownItem
-                label="API Source"
-                description="Choose a download source or leave as Auto"
-                rgOptions={[
-                  { data: "", label: "Auto (try all)" },
-                  ...sources.map((s) => ({ data: s.name, label: s.name })),
-                ]}
-                selectedOption={selectedSource}
-                onChange={(opt) => setSelectedSource(opt.data as string)}
-              />
-            </PanelSectionRow>
-          )}
-        </>
+      {!searchOpen && searchQuery.trim() && searchResults.length === 0 && !searching && (
+        <PanelSectionRow>
+          <div
+            className={staticClasses.Label}
+            style={{ color: "var(--gpSystemLighterGrey)", fontSize: "13px" }}
+          >
+            No results found
+          </div>
+        </PanelSectionRow>
       )}
-
+      {resolvedName && !searchOpen && (
+        <PanelSectionRow>
+          <div className={staticClasses.Label}>{resolvedName}</div>
+        </PanelSectionRow>
+      )}
+      {!fastDownload && sources.length > 0 && (
+        <PanelSectionRow>
+          <DropdownItem
+            label="API Source"
+            description="Choose a download source or leave as Auto"
+            rgOptions={[
+              { data: "", label: "Auto (try all)" },
+              ...sources.map((s) => ({ data: s.name, label: s.name })),
+            ]}
+            selectedOption={selectedSource}
+            onChange={(opt) => setSelectedSource(opt.data as string)}
+          />
+        </PanelSectionRow>
+      )}
       <PanelSectionRow>
         <ButtonItem
           layout="below"
