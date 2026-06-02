@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+import httpx
 import decky
 
 # Ensure the plugin root is on sys.path so the backend package resolves
@@ -25,6 +27,7 @@ from backend.downloads import (
     create_cancel_event,
     cancel_task,
     cleanup_task,
+    USER_AGENT,
 )
 from backend.api_manifest import (
     get_api_sources,
@@ -63,6 +66,16 @@ class Plugin:
     async def _main(self) -> None:
         """Initialize on plugin load."""
         decky.logger.info(f"{decky.DECKY_PLUGIN_NAME} v{decky.DECKY_PLUGIN_VERSION} loaded")
+
+        # Clean up stale restart scripts from previous runs
+        settings_dir = Path(decky.DECKY_PLUGIN_SETTINGS_DIR)
+        for pattern in ["restart_steam.ps1", "restart_steam.sh"]:
+            script = settings_dir / pattern
+            if script.exists():
+                try:
+                    script.unlink()
+                except OSError:
+                    pass
 
         # Pre-fetch API manifest in background
         try:
@@ -142,7 +155,7 @@ class Plugin:
                 zip_path = tmp_dir / f"{appid}_url.zip"
 
                 async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-                    resp = await client.get(url)
+                    resp = await client.get(url, headers={"User-Agent": USER_AGENT})
                     resp.raise_for_status()
                     zip_path.write_bytes(resp.content)
 
@@ -214,3 +227,109 @@ class Plugin:
         settings = _read_settings()
         settings[key] = value
         _write_settings(settings)
+
+    # ── Game Search ──
+
+    async def search_games(self, query: str) -> list[dict[str, Any]]:
+        """Search Steam store for games matching the query.
+
+        Returns up to ~10 results as [{id, name, img}].
+        Empty list on failure or empty query.
+        """
+        query = query.strip()
+        if not query:
+            return []
+
+        url = (
+            "https://store.steampowered.com/search/suggest"
+            f"?term={query}"
+            "&cc=US"
+            "&l=english"
+            "&realm=1"
+            "&f=jsonfull"
+            "&require_type=game,software"
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                resp = await client.get(url)
+                resp.raise_for_status()
+                raw = resp.json()
+        except Exception as exc:
+            decky.logger.debug(f"search_games failed: {exc}")
+            return []
+
+        results: list[dict[str, Any]] = []
+        for item in raw:
+            try:
+                results.append({
+                    "id": int(item["id"]),
+                    "name": str(item["name"]),
+                    "img": str(item.get("img", "")),
+                })
+            except (KeyError, ValueError, TypeError):
+                continue
+        return results
+
+    # ── Steam Restart ──
+
+    async def restart_steam(self) -> dict[str, Any]:
+        """Kill and restart Steam via a detached platform script.
+
+        Writes a PowerShell (Windows) or bash (Linux) script to the
+        plugin settings directory, spawns it as a fully detached
+        process, and returns immediately. The script survives Steam
+        shutdown and relaunches Steam afterward, then exits.
+        """
+        steam_path = get_steam_path()
+        if not steam_path:
+            return {"success": False, "error": "Steam path not detected"}
+
+        settings_dir = Path(decky.DECKY_PLUGIN_SETTINGS_DIR)
+        settings_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            if sys.platform == "win32":
+                self._spawn_restart_windows(steam_path, settings_dir)
+            else:
+                self._spawn_restart_linux(settings_dir)
+        except Exception as exc:
+            decky.logger.error(f"Failed to spawn restart script: {exc}")
+            return {"success": False, "error": str(exc)}
+
+        return {"success": True}
+
+    @staticmethod
+    def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None:
+        """Write and spawn PowerShell restart script (Windows)."""
+        steam_exe = str(Path(steam_path) / "steam.exe")
+        script_path = settings_dir / "restart_steam.ps1"
+        script_path.write_text(
+            f'$steamPath = "{steam_exe}"\n'
+            "taskkill /F /IM steam.exe 2>$null\n"
+            "Start-Sleep -Seconds 3\n"
+            "while (Get-Process steam -ErrorAction SilentlyContinue) {"
+            " Start-Sleep -Seconds 1 }\n"
+            "Start-Process -FilePath $steamPath\n"
+        )
+        subprocess.Popen(
+            ["powershell", "-ExecutionPolicy", "Bypass", "-File", str(script_path)],
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+        )
+
+    @staticmethod
+    def _spawn_restart_linux(settings_dir: Path) -> None:
+        """Write and spawn bash restart script (Linux)."""
+        script_path = settings_dir / "restart_steam.sh"
+        script_path.write_text(
+            "#!/bin/bash\n"
+            "sleep 3\n"
+            "pkill -9 steam 2>/dev/null\n"
+            "sleep 2\n"
+            "steam &\n"
+        )
+        script_path.chmod(0o755)
+        subprocess.Popen(
+            ["bash", str(script_path)],
+            start_new_session=True,
+        )

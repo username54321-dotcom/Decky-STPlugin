@@ -8,15 +8,47 @@ import {
 import {
   definePlugin,
   routerHook,
+  callable,
+  toaster,
 } from "@decky/api";
-import React from "react";
+import React, { useState } from "react";
 import { FaDownload } from "react-icons/fa";
 
 import { DownloadPanel } from "./components/DownloadPanel";
 import { InstalledApps } from "./components/InstalledApps";
 import { SettingsPanel } from "./components/SettingsPanel";
 
+const restartSteam = callable<[], { success: boolean; error?: string }>("restart_steam");
+
 function MainPanel() {
+  const [restartState, setRestartState] = useState<"idle" | "confirming" | "restarting">("idle");
+
+  const handleRestartClick = () => {
+    if (restartState === "idle") {
+      setRestartState("confirming");
+    }
+  };
+
+  const handleRestartCancel = () => {
+    setRestartState("idle");
+  };
+
+  const handleRestartConfirm = async () => {
+    setRestartState("restarting");
+    try {
+      const result = await restartSteam();
+      if (result.success) {
+        toaster.toast({ title: "STPlugin", body: "Steam is restarting..." });
+      } else {
+        toaster.toast({ title: "Restart Failed", body: result.error || "Unknown error" });
+        setRestartState("idle");
+      }
+    } catch (err: any) {
+      toaster.toast({ title: "Restart Failed", body: String(err) });
+      setRestartState("idle");
+    }
+  };
+
   return (
     <PanelSection title="STPlugin">
       <PanelSectionRow>
@@ -42,6 +74,33 @@ function MainPanel() {
         >
           Settings
         </ButtonItem>
+      </PanelSectionRow>
+
+      {/* Restart Steam — with inline confirmation */}
+      <PanelSectionRow>
+        {restartState === "confirming" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div className={staticClasses.Label} style={{ color: "var(--gpSystemYellow)", marginBottom: "4px" }}>
+              Restart Steam?
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <ButtonItem layout="below" onClick={handleRestartCancel}>
+                Cancel
+              </ButtonItem>
+              <ButtonItem layout="below" onClick={handleRestartConfirm}>
+                Yes, restart
+              </ButtonItem>
+            </div>
+          </div>
+        ) : (
+          <ButtonItem
+            layout="below"
+            onClick={handleRestartClick}
+            disabled={restartState === "restarting"}
+          >
+            {restartState === "restarting" ? "Restarting..." : "Restart Steam"}
+          </ButtonItem>
+        )}
       </PanelSectionRow>
     </PanelSection>
   );

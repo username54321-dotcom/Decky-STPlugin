@@ -14,6 +14,10 @@ import httpx
 from backend.api_manifest import get_api_sources
 from backend.steam_paths import get_lua_dir, get_steam_path
 
+# ── User-Agent for download source identification ──
+
+USER_AGENT = "discord(dot)gg/luatools"
+
 # ── Rate limiting for Steam API ──
 
 _LAST_API_CALL_TIME = 0.0
@@ -238,7 +242,7 @@ async def download_lua(
             })
 
             try:
-                resp = await client.get(url)
+                resp = await client.get(url, headers={"User-Agent": USER_AGENT})
                 code = resp.status_code
 
                 if code == unavailable_code or code != success_code:

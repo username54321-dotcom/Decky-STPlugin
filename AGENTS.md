@@ -6,7 +6,7 @@ Port **LTSteamPlugin** (a Millennium desktop Steam plugin) to **Decky Loader** (
 
 ## Current State
 
-**Phase: Build — Tasks 1-12 complete.** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Tests pass (17/17). Build produces dist/index.js.
+**Phase: Build — Tasks 1-14 complete.** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Game name search added (Steam `/search/suggest` proxy with debounced dropdown). Steam restart button added (main menu + post-download prompt). Tests pass (37/37). Build produces dist/index.js.
 
 ## Target Platform
 
@@ -25,7 +25,7 @@ Always code for Windows first with a cross-platform fallback. When in doubt, cho
 
 | Status | Features |
 |--------|----------|
-| ✅ **KEEP** | Lua download pipeline (4 API sources), QAM management panel, API manifest, fastDownload + morrenusApiKey settings, DLC warning, loaded apps tracking, download progress/cancel, URL-based download, Windows registry Steam path detection |
+| ✅ **KEEP** | Lua download pipeline (4 API sources), QAM management panel, API manifest, fastDownload + morrenusApiKey settings, DLC warning, loaded apps tracking, download progress/cancel, URL-based download, Windows registry Steam path detection, **game name search** (Steam suggest proxy + dropdown UI), **Steam restart button** (main menu + post-download prompt) |
 | ❌ **DROP** | Game fixes system (entirely), 11 themes, 31 locales (English hardcoded only), SteamDB browser extension, key donation, games database (playability pills), playable warning |
 | ⏸️ **DEFER** | In-plugin update check (GitHub), non-English locales, additional settings |
 
@@ -56,7 +56,9 @@ Before making any code change or design decision, read these:
 Decky-STPlugin/
 ├── src/                    # TypeScript/React frontend (to be created)
 │   ├── index.tsx           # definePlugin() entry point + QAM panel
-│   └── components/         # Shared React components (dialogs, progress)
+│   ├── components/
+│   │   ├── GameSearchDropdown.tsx  # Game search results dropdown
+│   │   └── ...                     # Other components
 ├── backend/                # Python modules (to be created)
 │   ├── downloads.py        # Download pipeline (trimmed from Millennium ~1200 lines)
 │   ├── api_manifest.py     # API source management (~60 lines)
@@ -71,7 +73,9 @@ Decky-STPlugin/
 │   │   └── decky-loader-plugin-development.md
 │   └── superpowers/
 │       ├── specs/          # Design specs
-│       └── plans/          # Implementation plans
+│       ├── plans/          # Implementation plans
+│   │       ├── 2026-06-02-game-search.md  # Game search implementation plan
+│   │       └── 2026-06-02-steam-restart-button.md  # Steam restart button implementation plan
 └── ltsteamplugin/          # Millennium reference (gitignored, not part of the build)
 ```
 
