@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "rollup -c",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "deploy": "node scripts/deploy.mjs",
+    "build:deploy": "rollup -c && node scripts/deploy.mjs"
   },
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
