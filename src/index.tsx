@@ -7,10 +7,6 @@ import {
 } from "@decky/ui";
 import {
   definePlugin,
-  callable,
-  addEventListener,
-  removeEventListener,
-  toaster,
   routerHook,
 } from "@decky/api";
 import React from "react";
@@ -19,7 +15,6 @@ import { FaDownload } from "react-icons/fa";
 import { DownloadPanel } from "./components/DownloadPanel";
 import { InstalledApps } from "./components/InstalledApps";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { registerStoreButtonPatch } from "./patches/storeButton";
 
 function MainPanel() {
   return (
@@ -60,8 +55,6 @@ export default definePlugin(() => {
   routerHook.addRoute("/stplugin/installed", () => <InstalledApps />, { exact: true });
   routerHook.addRoute("/stplugin/settings", () => <SettingsPanel />, { exact: true });
 
-  const storeButtonUnpatch = registerStoreButtonPatch();
-
   return {
     name: "STPlugin",
     titleView: <div className={staticClasses.Title}>STPlugin</div>,
@@ -73,7 +66,6 @@ export default definePlugin(() => {
       routerHook.removeRoute("/stplugin/download");
       routerHook.removeRoute("/stplugin/installed");
       routerHook.removeRoute("/stplugin/settings");
-      storeButtonUnpatch?.unpatch?.();
     },
   };
 });
