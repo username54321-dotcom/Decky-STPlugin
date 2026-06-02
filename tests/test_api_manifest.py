@@ -58,5 +58,17 @@ class TestFilterSources:
 def test_default_sources_has_four_entries():
     defaults = _get_default_sources()
     assert len(defaults) == 4
-    names = {s["name"] for s in defaults}
-    assert names == {"Morrenus", "Ryuu", "TwentyTwo Cloud", "Sushi"}
+
+    by_name = {s["name"]: s for s in defaults}
+    assert set(by_name.keys()) == {"Morrenus", "Ryuu", "TwentyTwo Cloud", "Sushi"}
+
+    assert by_name["Ryuu"]["url"] == "http://167.235.229.108/<appid>"
+    assert by_name["Sushi"]["url"] == (
+        "https://raw.githubusercontent.com/sushi-dev55-alt/sushitools-games-repo-alt/refs/heads/main/<appid>.zip"
+    )
+    assert by_name["Morrenus"]["url"] == (
+        "https://hubcapmanifest.com/api/v1/manifest/<appid>?api_key=<moapikey>"
+    )
+    assert by_name["TwentyTwo Cloud"]["url"] == (
+        "https://api.twentytwocloud.com/download?appid=<appid>"
+    )

@@ -10,9 +10,9 @@ import httpx
 
 # Primary and fallback URLs for the API manifest
 _API_MANIFEST_URL = (
-    "https://raw.githubusercontent.com/madoiscool/lt_api_links/refs/heads/main/api_links.json"
+    "https://raw.githubusercontent.com/madoiscool/lt_api_links/refs/heads/main/load_free_manifest_apis"
 )
-_API_MANIFEST_PROXY_URL = "https://lt-api-links.vercel.app/api_links.json"
+_API_MANIFEST_PROXY_URL = "https://luatools.vercel.app/load_free_manifest_apis"
 
 # In-memory cache of fetched API sources
 _cached_sources: list[dict[str, Any]] | None = None
@@ -94,28 +94,28 @@ def _get_default_sources() -> list[dict[str, Any]]:
     return [
         {
             "name": "Morrenus",
-            "url": "https://morrenus.xyz/morrenus/api/<appid>/lua/download?key=<moapikey>",
+            "url": "https://hubcapmanifest.com/api/v1/manifest/<appid>?api_key=<moapikey>",
             "enabled": True,
             "success_code": 200,
             "unavailable_code": 404,
         },
         {
             "name": "Ryuu",
-            "url": "http://167.235.229.108/<appid>/lua",
+            "url": "http://167.235.229.108/<appid>",
             "enabled": True,
             "success_code": 200,
             "unavailable_code": 404,
         },
         {
             "name": "TwentyTwo Cloud",
-            "url": "https://api.22cloud.pw/<appid>/lua",
+            "url": "https://api.twentytwocloud.com/download?appid=<appid>",
             "enabled": True,
             "success_code": 200,
             "unavailable_code": 404,
         },
         {
             "name": "Sushi",
-            "url": "https://raw.githubusercontent.com/madoiscool/lua-sushi/main/<appid>/<appid>.zip",
+            "url": "https://raw.githubusercontent.com/sushi-dev55-alt/sushitools-games-repo-alt/refs/heads/main/<appid>.zip",
             "enabled": True,
             "success_code": 200,
             "unavailable_code": 404,

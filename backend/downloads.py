@@ -151,6 +151,14 @@ def _substitute_url(template: str, appid: int, api_key: str = "") -> str:
     return url
 
 
+def _format_failure_message(failures: list[str]) -> str:
+    """Build a detailed error message from per-source failure reasons."""
+    if not failures:
+        return "All download sources unavailable"
+    detail = "; ".join(failures)
+    return f"All download sources unavailable: {detail}"
+
+
 async def download_lua(
     task_id: str,
     appid: int,
@@ -207,6 +215,7 @@ async def download_lua(
     zip_path = tmp_dir / f"{appid}.zip"
 
     async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+        failures: list[str] = []
         for src in all_sources:
             if _is_cancelled(task_id):
                 return None
@@ -218,6 +227,7 @@ async def download_lua(
 
             # Skip sources requiring an API key if none is set
             if "<moapikey>" in template and not api_key:
+                failures.append(f"{name} (no API key)")
                 continue
 
             url = _substitute_url(template, appid, api_key)
@@ -231,9 +241,9 @@ async def download_lua(
                 resp = await client.get(url)
                 code = resp.status_code
 
-                if code == unavailable_code:
-                    continue
-                if code != success_code:
+                if code == unavailable_code or code != success_code:
+                    reason = resp.reason_phrase or f"HTTP {code}"
+                    failures.append(f"{name} ({code} {reason})")
                     continue
 
                 total = int(resp.headers.get("Content-Length", "0") or "0")
@@ -255,6 +265,7 @@ async def download_lua(
                     magic = fh.read(4)
                 if magic not in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"):
                     zip_path.unlink(missing_ok=True)
+                    failures.append(f"{name} (invalid file)")
                     continue  # Not a zip file, try next source
 
                 # Extract and install
@@ -289,15 +300,17 @@ async def download_lua(
                     return str(result)
 
                 # Source succeeded but no lua found — try next
+                failures.append(f"{name} (no .lua found)")
                 continue
 
             except Exception:
+                failures.append(f"{name} (connection failed)")
                 continue  # Try next source
 
-    # All sources failed
+    # All sources failed — emit detailed error
     await decky.emit("download_progress", task_id, {
         "task_id": task_id, "phase": "error",
-        "percent": 0, "message": "All download sources unavailable",
+        "percent": 0, "message": _format_failure_message(failures),
     })
     _cleanup(zip_path)
     return None
