@@ -11,6 +11,8 @@ from typing import Any
 
 import decky
 
+from backend.store_injector import StoreInjector
+
 # Ensure the plugin root is on sys.path so the backend package resolves
 _PLUGIN_DIR = Path(__file__).resolve().parent
 if str(_PLUGIN_DIR) not in sys.path:
@@ -63,6 +65,12 @@ class Plugin:
     async def _main(self) -> None:
         """Initialize on plugin load."""
         decky.logger.info(f"{decky.DECKY_PLUGIN_NAME} v{decky.DECKY_PLUGIN_VERSION} loaded")
+
+        # Start store page button injection
+        self._store_injector = StoreInjector()
+        self.loop = asyncio.get_event_loop()
+        self.loop.create_task(self._store_injector.start())
+
         # Pre-fetch API manifest in background
         try:
             sources = await refresh_manifest()
@@ -72,27 +80,9 @@ class Plugin:
 
     async def _unload(self) -> None:
         """Cleanup on plugin unload."""
+        if hasattr(self, "_store_injector"):
+            await self._store_injector.stop()
         decky.logger.info("STPlugin unloading")
-
-    # ── Store Tab Discovery ──
-
-    async def find_store_tab(self) -> str | None:
-        """Discover the CEF tab ID for store.steampowered.com via CDP."""
-        import httpx
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get("http://localhost:8080/json")
-                resp.raise_for_status()
-                tabs = resp.json()
-                for tab in tabs:
-                    if isinstance(tab, dict) and tab.get("type") == "page":
-                        url = tab.get("url", "")
-                        if "store.steampowered.com" in url:
-                            return str(tab.get("id", "")) or None
-                return None
-        except Exception as exc:
-            decky.logger.warn(f"Failed to query CDP tabs: {exc}")
-            return None
 
     # ── Steam Path ──
 
