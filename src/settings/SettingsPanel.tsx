@@ -1,5 +1,4 @@
 import {
-  PanelSection,
   PanelSectionRow,
   ToggleField,
   TextField,
@@ -11,6 +10,7 @@ import { FaSync } from "react-icons/fa";
 import type { Settings } from "../shared/types";
 import { SETTINGS_KEYS } from "../shared/constants";
 import { SPACING, BORDER } from "../shared/styles";
+import { PageLayout } from "../shared/components/PageLayout";
 
 const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
@@ -47,41 +47,39 @@ export function SettingsPanel() {
   };
 
   return (
-    <div style={{ paddingTop: SPACING.panelTopPadding }}>
-      <PanelSection title="Settings">
-        <PanelSectionRow>
-          <ToggleField
-            label="Fast Download"
-            description="Skip source picker — auto-select first working API source"
-            checked={fastDownload}
-            onChange={handleFastDownload}
-          />
-        </PanelSectionRow>
+    <PageLayout title="Settings">
+      <PanelSectionRow>
+        <ToggleField
+          label="Fast Download"
+          description="Skip source picker — auto-select first working API source"
+          checked={fastDownload}
+          onChange={handleFastDownload}
+        />
+      </PanelSectionRow>
 
-        <PanelSectionRow>
-          <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
-        </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+      </PanelSectionRow>
 
-        <PanelSectionRow>
-          <TextField
-            label="Morrenus API Key"
-            description="Optional"
-            value={apiKey}
-            onChange={handleApiKeyChange}
-          />
-        </PanelSectionRow>
+      <PanelSectionRow>
+        <TextField
+          label="Morrenus API Key"
+          description="Optional"
+          value={apiKey}
+          onChange={handleApiKeyChange}
+        />
+      </PanelSectionRow>
 
-        <PanelSectionRow>
-          <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
-        </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+      </PanelSectionRow>
 
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleRefresh}>
-            <FaSync style={{ marginRight: "4px" }} />
-            Refresh API Sources
-          </ButtonItem>
-        </PanelSectionRow>
-      </PanelSection>
-    </div>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={handleRefresh}>
+          <FaSync style={{ marginRight: "4px" }} />
+          Refresh API Sources
+        </ButtonItem>
+      </PanelSectionRow>
+    </PageLayout>
   );
 }

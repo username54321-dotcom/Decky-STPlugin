@@ -1,5 +1,4 @@
 import {
-  PanelSection,
   PanelSectionRow,
   ButtonItem,
   staticClasses,
@@ -12,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import { FaTrash, FaRedo } from "react-icons/fa";
 import type { InstalledApp } from "../shared/types";
 import { SPACING, BORDER, COLOR } from "../shared/styles";
+import { PageLayout } from "../shared/components/PageLayout";
 
 const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
 const deleteApp = callable<[number], boolean>("delete_app");
@@ -62,22 +62,19 @@ export function InstalledApps() {
 
   if (apps.length === 0) {
     return (
-      <div style={{ paddingTop: SPACING.panelTopPadding }}>
-        <PanelSection title="Installed Scripts">
-          <PanelSectionRow>
-            <div className={staticClasses.Label} style={{ color: COLOR.muted }}>
-              No Lua scripts installed yet.
-            </div>
-          </PanelSectionRow>
-        </PanelSection>
-      </div>
+      <PageLayout title="Installed Scripts">
+        <PanelSectionRow>
+          <div className={staticClasses.Label} style={{ color: COLOR.muted }}>
+            No Lua scripts installed yet.
+          </div>
+        </PanelSectionRow>
+      </PageLayout>
     );
   }
 
   return (
-    <div style={{ paddingTop: SPACING.panelTopPadding }}>
-      <PanelSection title="Installed Scripts">
-        {apps.map((app, index) => (
+    <PageLayout title="Installed Scripts">
+      {apps.map((app, index) => (
           <React.Fragment key={app.appid}>
             <PanelSectionRow>
               <div style={{ display: "flex", alignItems: "center", gap: SPACING.controlsGap }}>
@@ -104,7 +101,6 @@ export function InstalledApps() {
             )}
           </React.Fragment>
         ))}
-      </PanelSection>
-    </div>
+    </PageLayout>
   );
 }

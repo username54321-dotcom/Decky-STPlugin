@@ -1,6 +1,12 @@
 export const SPACING = {
   /** Top padding to clear the QAM header bar on all panels */
   panelTopPadding: "8px",
+  /** Max width of the centered content block (mx-auto effect) for sub-pages */
+  pageMaxWidth: "340px",
+  /** Top padding for sub-page content blocks */
+  pageTopPadding: "16px",
+  /** Bottom padding for sub-page content blocks */
+  pageBottomPadding: "16px",
   /** Gap between major content sections */
   sectionGap: "16px",
   /** Gap within a section row */
