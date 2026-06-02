@@ -11,8 +11,6 @@ from typing import Any
 
 import decky
 
-from backend.store_injector import StoreInjector
-
 # Ensure the plugin root is on sys.path so the backend package resolves
 _PLUGIN_DIR = Path(__file__).resolve().parent
 if str(_PLUGIN_DIR) not in sys.path:
@@ -66,11 +64,6 @@ class Plugin:
         """Initialize on plugin load."""
         decky.logger.info(f"{decky.DECKY_PLUGIN_NAME} v{decky.DECKY_PLUGIN_VERSION} loaded")
 
-        # Start store page button injection
-        self._store_injector = StoreInjector()
-        self.loop = asyncio.get_event_loop()
-        self.loop.create_task(self._store_injector.start())
-
         # Pre-fetch API manifest in background
         try:
             sources = await refresh_manifest()
@@ -80,8 +73,6 @@ class Plugin:
 
     async def _unload(self) -> None:
         """Cleanup on plugin unload."""
-        if hasattr(self, "_store_injector"):
-            await self._store_injector.stop()
         decky.logger.info("STPlugin unloading")
 
     # ── Steam Path ──
