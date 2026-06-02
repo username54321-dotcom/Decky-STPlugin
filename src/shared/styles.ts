@@ -3,8 +3,8 @@ export const SPACING = {
   panelTopPadding: "8px",
   /** Max width of the centered content block (mx-auto effect) for sub-pages */
   pageMaxWidth: "340px",
-  /** Top padding for sub-page content blocks */
-  pageTopPadding: "16px",
+  /** Top padding for sub-page content blocks (48px to clear Steam GamepadUI top bar) */
+  pageTopPadding: "48px",
   /** Bottom padding for sub-page content blocks */
   pageBottomPadding: "16px",
   /** Gap between major content sections */
