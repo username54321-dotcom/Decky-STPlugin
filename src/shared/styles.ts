@@ -32,3 +32,14 @@ export const COLOR = {
   backgroundLight: "var(--gpBackgroundLight)",
   backgroundHard: "var(--gpBackgroundHard)",
 };
+
+export const CARD = {
+  background: "var(--gpBackgroundLight)",
+  border: "1px solid var(--gpBackgroundMedium)",
+  borderRadius: "8px",
+  padding: "12px",
+  gap: "8px",
+  hoverBackground: "var(--gpBackgroundMedium)",
+  capsuleWidth: "120px",
+  capsuleHeight: "45px",
+};

@@ -293,8 +293,9 @@ async def download_lua(
                         _cleanup(zip_path)
                         return None
 
-                    # Track installed app
-                    _track_installed(appid, lua_dir)
+                    # Track installed app with name
+                    app_name = await resolve_app_name(appid)
+                    _track_installed(appid, lua_dir, app_name)
 
                     await decky.emit("download_progress", task_id, {
                         "task_id": task_id, "phase": "done",
@@ -372,16 +373,19 @@ def _extract_and_install(appid: int, zip_path: Path, lua_dir: Path) -> Path | No
         return dest
 
 
-def _track_installed(appid: int, lua_dir: Path) -> None:
-    """Append appid to loaded app tracking file."""
+def _track_installed(appid: int, lua_dir: Path, name: str = "") -> None:
+    """Append appid:name to loaded app tracking file."""
     tracking_file = lua_dir / "loadedappids.txt"
     try:
-        existing = set()
+        entry = f"{appid}:{name}" if name else str(appid)
+        lines = []
         if tracking_file.exists():
-            existing = set(tracking_file.read_text().splitlines())
-        if str(appid) not in existing:
-            with tracking_file.open("a", encoding="utf-8") as f:
-                f.write(f"{appid}\n")
+            lines = tracking_file.read_text().splitlines()
+        appid_str = str(appid)
+        lines = [ln for ln in lines if not (ln.strip() == appid_str or ln.strip().startswith(f"{appid_str}:"))]
+        lines.append(entry)
+        with tracking_file.open("w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
     except Exception:
         pass
 
@@ -407,21 +411,50 @@ def get_installed_apps() -> list[dict[str, Any]]:
     apps = []
     for line in tracking_file.read_text().splitlines():
         line = line.strip()
-        if line and line.isdigit():
+        if not line:
+            continue
+        if ":" in line:
+            # New format: appid:name
+            parts = line.split(":", 1)
+            try:
+                appid = int(parts[0])
+                name = parts[1] if len(parts) > 1 else ""
+                apps.append({"appid": appid, "name": name})
+            except ValueError:
+                continue
+        elif line.isdigit():
+            # Legacy format: plain appid
             apps.append({"appid": int(line), "name": ""})
     return apps
 
 
+def _remove_loaded_app(appid: int) -> None:
+    """Remove appid from the loaded app tracking file."""
+    steam_path = get_steam_path()
+    if not steam_path:
+        return
+    tracking_file = get_lua_dir(steam_path) / "loadedappids.txt"
+    if not tracking_file.exists():
+        return
+    lines = tracking_file.read_text().splitlines()
+    prefix = f"{appid}:"
+    new_lines = [line for line in lines if not line.strip().startswith(prefix)]
+    # Also handle legacy format (plain appid without name)
+    new_lines = [line for line in new_lines if line.strip() != str(appid)]
+    if len(new_lines) != len(lines):
+        tracking_file.write_text("\n".join(new_lines) + "\n")
+
+
 def remove_lua(appid: int) -> bool:
-    """Delete the .lua file for the given app ID."""
+    """Delete the .lua file and remove from tracking for the given app ID."""
     steam_path = get_steam_path()
     if not steam_path:
         return False
     lua_file = get_lua_dir(steam_path) / f"{appid}.lua"
     if lua_file.exists():
         lua_file.unlink()
-        return True
-    return False
+    _remove_loaded_app(appid)
+    return True
 
 
 def create_cancel_event() -> tuple[str, threading.Event]:

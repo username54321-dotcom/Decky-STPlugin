@@ -1,32 +1,30 @@
-import {
-  PanelSectionRow,
-  ButtonItem,
-  staticClasses,
-  ControlsList,
-  ConfirmModal,
-  showModal,
-} from "@decky/ui";
-import { callable, toaster } from "@decky/api";
+import { ButtonItem, staticClasses } from "@decky/ui";
+import { callable } from "@decky/api";
 import React, { useState, useEffect } from "react";
-import { FaTrash, FaRedo } from "react-icons/fa";
+import { FaBoxOpen, FaExclamationTriangle, FaSync } from "react-icons/fa";
 import type { InstalledApp } from "../shared/types";
-import { SPACING, BORDER, COLOR } from "../shared/styles";
+import { CARD, SPACING } from "../shared/styles";
 import { PageLayout } from "../shared/components/PageLayout";
+import { InstalledAppCard } from "./InstalledAppCard";
+import { SkeletonCard } from "./SkeletonCard";
 
 const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
-const deleteApp = callable<[number], boolean>("delete_app");
-const startDownload = callable<[number, string?], string>("start_download");
+
+type PageState = "loading" | "loaded" | "error";
 
 export function InstalledApps() {
   const [apps, setApps] = useState<InstalledApp[]>([]);
+  const [state, setState] = useState<PageState>("loading");
 
   const loadApps = async () => {
+    setState("loading");
     try {
       const result = await getInstalledApps();
       setApps(result);
-    } catch {
-      console.warn("[STPlugin] Failed to load installed apps");
-      setApps([]);
+      setState("loaded");
+    } catch (err) {
+      console.warn("[STPlugin] Failed to load installed apps:", err);
+      setState("error");
     }
   };
 
@@ -34,73 +32,95 @@ export function InstalledApps() {
     loadApps();
   }, []);
 
-  const handleDelete = (appid: number, name: string) => {
-    showModal(
-      <ConfirmModal
-        strTitle="Delete Script?"
-        strDescription={`Delete ${name || `App ${appid}`}? This cannot be undone.`}
-        strOKButtonText="Delete"
-        strCancelButtonText="Cancel"
-        bDestructiveWarning={true}
-        onOK={async () => {
-          const ok = await deleteApp(appid);
-          if (ok) {
-            toaster.toast({ title: "STPlugin", body: `Removed ${name || `App ${appid}`}` });
-            await loadApps();
-          } else {
-            toaster.toast({ title: "Error", body: "Failed to remove Lua file" });
-          }
-        }}
-      />
-    );
+  const handleDeleteSuccess = (appid: number) => {
+    setApps((prev) => prev.filter((app) => app.appid !== appid));
   };
 
-  const handleRedownload = async (appid: number) => {
-    const taskId = await startDownload(appid);
-    toaster.toast({ title: "STPlugin", body: `Re-downloading App ${appid}...` });
-  };
-
-  if (apps.length === 0) {
+  // Loading state
+  if (state === "loading") {
     return (
       <PageLayout title="Installed Scripts">
-        <PanelSectionRow>
-          <div className={staticClasses.Label} style={{ color: COLOR.muted }}>
-            No Lua scripts installed yet.
-          </div>
-        </PanelSectionRow>
+        <style>{`@keyframes skeleton-pulse{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+        <div style={{ display: "flex", flexDirection: "column", gap: CARD.gap }}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </PageLayout>
     );
   }
 
+  // Error state
+  if (state === "error") {
+    return (
+      <PageLayout title="Installed Scripts">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "32px 16px",
+            gap: "16px",
+            textAlign: "center",
+          }}
+        >
+          <FaExclamationTriangle
+            style={{ fontSize: "32px", color: "var(--gpSystemYellow)" }}
+          />
+          <div className={staticClasses.Label}>
+            Failed to load installed scripts.
+          </div>
+          <ButtonItem onClick={loadApps}>
+            <FaSync style={{ marginRight: "8px" }} />
+            Retry
+          </ButtonItem>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Empty state
+  if (apps.length === 0) {
+    return (
+      <PageLayout title="Installed Scripts">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "32px 16px",
+            gap: "12px",
+            textAlign: "center",
+          }}
+        >
+          <FaBoxOpen
+            style={{ fontSize: "40px", color: "var(--gpSystemLighterGrey)" }}
+          />
+          <div className={staticClasses.Label}>
+            No Lua scripts installed yet.
+          </div>
+          <div style={{ color: "var(--gpSystemLighterGrey)", fontSize: "13px" }}>
+            Download one from the Search tab.
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Loaded state with cards
   return (
     <PageLayout title="Installed Scripts">
-      {apps.map((app, index) => (
-          <React.Fragment key={app.appid}>
-            <PanelSectionRow>
-              <div style={{ display: "flex", alignItems: "center", gap: SPACING.controlsGap }}>
-                <span
-                  className={staticClasses.Label}
-                  style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                >
-                  {app.name || `App ${app.appid}`}
-                </span>
-                <ControlsList spacing="standard">
-                  <ButtonItem onClick={() => handleRedownload(app.appid)}>
-                    <FaRedo />
-                  </ButtonItem>
-                  <ButtonItem onClick={() => handleDelete(app.appid, app.name)}>
-                    <FaTrash />
-                  </ButtonItem>
-                </ControlsList>
-              </div>
-            </PanelSectionRow>
-            {index < apps.length - 1 && (
-              <PanelSectionRow>
-                <div style={{ borderTop: BORDER.divider, margin: `0 0 ${SPACING.rowGap} 0` }} />
-              </PanelSectionRow>
-            )}
-          </React.Fragment>
+      <div style={{ display: "flex", flexDirection: "column", gap: CARD.gap }}>
+        {apps.map((app) => (
+          <InstalledAppCard
+            key={app.appid}
+            app={app}
+            onDelete={handleDeleteSuccess}
+          />
         ))}
+      </div>
     </PageLayout>
   );
 }

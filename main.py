@@ -161,8 +161,9 @@ class Plugin:
 
                 from backend.downloads import _extract_and_install
                 result = _extract_and_install(appid, zip_path, lua_dir)
-                from backend.downloads import _track_installed
-                _track_installed(appid, lua_dir)
+                from backend.downloads import _track_installed, resolve_app_name
+                app_name = await resolve_app_name(appid)
+                _track_installed(appid, lua_dir, app_name)
 
                 await decky.emit("download_progress", task_id, {
                     "task_id": task_id, "phase": "done",
@@ -185,8 +186,14 @@ class Plugin:
     async def get_installed_apps(self) -> list[dict[str, Any]]:
         """Return list of installed Lua scripts with resolved names."""
         apps = get_installed_apps()
-        for app in apps:
-            app["name"] = await resolve_app_name(app["appid"])
+        # Only resolve names for apps missing them
+        uncached = [app for app in apps if not app.get("name")]
+        if uncached:
+            names = await asyncio.gather(
+                *[resolve_app_name(app["appid"]) for app in uncached]
+            )
+            for app, name in zip(uncached, names):
+                app["name"] = name
         return apps
 
     async def delete_app(self, appid: int) -> bool:
