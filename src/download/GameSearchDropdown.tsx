@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { staticClasses } from "@decky/ui";
 import type { GameSearchResult } from "../shared/types";
+import { COLOR, BORDER } from "../shared/styles";
 
 export interface GameSearchDropdownProps {
   results: GameSearchResult[];
@@ -8,19 +9,21 @@ export interface GameSearchDropdownProps {
 }
 
 export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   if (results.length === 0) {
     return (
       <div
         style={{
           position: "relative",
           padding: "12px 16px",
-          color: "var(--gpSystemLighterGrey)",
+          color: COLOR.muted,
           fontSize: "14px",
-          backgroundColor: "var(--gpBackgroundMedium)",
-          border: "1px solid var(--gpBackgroundLight)",
+          backgroundColor: COLOR.backgroundMedium,
+          border: `1px solid ${COLOR.backgroundLight}`,
           borderTop: "none",
-          borderBottomLeftRadius: "3px",
-          borderBottomRightRadius: "3px",
+          borderBottomLeftRadius: BORDER.cardRadius,
+          borderBottomRightRadius: BORDER.cardRadius,
         }}
       >
         No results found
@@ -34,14 +37,14 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
         position: "relative",
         maxHeight: "320px",
         overflowY: "auto",
-        backgroundColor: "var(--gpBackgroundMedium)",
-        border: "1px solid var(--gpBackgroundLight)",
+        backgroundColor: COLOR.backgroundMedium,
+        border: `1px solid ${COLOR.backgroundLight}`,
         borderTop: "none",
-        borderBottomLeftRadius: "3px",
-        borderBottomRightRadius: "3px",
+        borderBottomLeftRadius: BORDER.cardRadius,
+        borderBottomRightRadius: BORDER.cardRadius,
       }}
     >
-      {results.map((result) => (
+      {results.map((result, i) => (
         <div
           key={result.id}
           onClick={() => onSelect(result)}
@@ -51,14 +54,11 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
             gap: "12px",
             padding: "8px 12px",
             cursor: "pointer",
-            borderBottom: "1px solid var(--gpBackgroundLight)",
+            borderBottom: `1px solid ${COLOR.backgroundLight}`,
+            backgroundColor: hoveredIndex === i ? COLOR.backgroundHard : "transparent",
           }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = "var(--gpBackgroundHard)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-          }}
+          onMouseEnter={() => setHoveredIndex(i)}
+          onMouseLeave={() => setHoveredIndex(null)}
         >
           {result.img ? (
             <img
@@ -68,7 +68,7 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
                 width: "120px",
                 height: "45px",
                 objectFit: "cover",
-                borderRadius: "3px",
+                borderRadius: BORDER.cardRadius,
                 flexShrink: 0,
               }}
               onError={(e) => {
@@ -80,8 +80,8 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
               style={{
                 width: "120px",
                 height: "45px",
-                backgroundColor: "var(--gpBackgroundHard)",
-                borderRadius: "3px",
+                backgroundColor: COLOR.backgroundHard,
+                borderRadius: BORDER.cardRadius,
                 flexShrink: 0,
               }}
             />

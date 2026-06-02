@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
 import type { Settings } from "../shared/types";
 import { SETTINGS_KEYS } from "../shared/constants";
+import { SPACING, BORDER } from "../shared/styles";
 
 const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
@@ -31,7 +32,8 @@ export function SettingsPanel() {
     await setSetting(SETTINGS_KEYS.fastDownload, checked);
   };
 
-  const handleApiKeyChange = async (value: string) => {
+  const handleApiKeyChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setApiKey(value);
     await setSetting(SETTINGS_KEYS.apiKey, value);
   };
@@ -45,27 +47,41 @@ export function SettingsPanel() {
   };
 
   return (
-    <PanelSection title="Settings">
-      <PanelSectionRow>
-        <ToggleField
-          label="Fast Download"
-          description="Skip source picker — auto-select first working API source"
-          checked={fastDownload}
-          onChange={handleFastDownload}
-        />
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <TextField
-          label="Morrenus API Key (optional)"
-          value={apiKey}
-          onChange={(e) => handleApiKeyChange(e.target.value)}
-        />
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem layout="below" onClick={handleRefresh}>
-          <FaSync /> Refresh API Sources
-        </ButtonItem>
-      </PanelSectionRow>
-    </PanelSection>
+    <div style={{ paddingTop: SPACING.panelTopPadding }}>
+      <PanelSection title="Settings">
+        <PanelSectionRow>
+          <ToggleField
+            label="Fast Download"
+            description="Skip source picker — auto-select first working API source"
+            checked={fastDownload}
+            onChange={handleFastDownload}
+          />
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <TextField
+            label="Morrenus API Key"
+            description="Optional"
+            value={apiKey}
+            onChange={handleApiKeyChange}
+          />
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleRefresh}>
+            <FaSync style={{ marginRight: "4px" }} />
+            Refresh API Sources
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
-import React from "react";
-import { PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui";
+import React, { useState } from "react";
+import { PanelSectionRow, ButtonItem, ConfirmModal, showModal } from "@decky/ui";
 import { useRestartSteam } from "../hooks/useRestartSteam";
 
 interface RestartButtonProps {
@@ -7,36 +7,29 @@ interface RestartButtonProps {
 }
 
 export function RestartButton({ onComplete }: RestartButtonProps) {
-  const { restartState, handleRestart, handleCancel } = useRestartSteam(onComplete);
+  const { isRestarting, confirmRestart } = useRestartSteam(onComplete);
+
+  const handleClick = () => {
+    showModal(
+      <ConfirmModal
+        strTitle="Restart Steam?"
+        strDescription="Steam will close and restart. Any running games will be terminated."
+        strOKButtonText="Restart Steam"
+        strCancelButtonText="Cancel"
+        onOK={() => confirmRestart()}
+      />
+    );
+  };
 
   return (
     <PanelSectionRow>
-      {restartState === "confirming" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <div
-            className={staticClasses.Label}
-            style={{ color: "var(--gpSystemYellow)", marginBottom: "4px" }}
-          >
-            Restart Steam?
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <ButtonItem layout="below" onClick={handleCancel}>
-              Cancel
-            </ButtonItem>
-            <ButtonItem layout="below" onClick={handleRestart}>
-              Yes, restart
-            </ButtonItem>
-          </div>
-        </div>
-      ) : (
-        <ButtonItem
-          layout="below"
-          onClick={handleRestart}
-          disabled={restartState === "restarting"}
-        >
-          {restartState === "restarting" ? "Restarting..." : "Restart Steam"}
-        </ButtonItem>
-      )}
+      <ButtonItem
+        layout="below"
+        onClick={handleClick}
+        disabled={isRestarting}
+      >
+        {isRestarting ? "Restarting..." : "Restart Steam"}
+      </ButtonItem>
     </PanelSectionRow>
   );
 }

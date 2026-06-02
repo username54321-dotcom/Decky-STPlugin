@@ -4,6 +4,8 @@ import {
   TextField,
   DropdownItem,
   staticClasses,
+  ControlsList,
+  SteamSpinner,
 } from "@decky/ui";
 import { callable } from "@decky/api";
 import React, { useState, useEffect, useCallback } from "react";
@@ -11,6 +13,7 @@ import { GameSearchDropdown } from "./GameSearchDropdown";
 import { useDebouncedSearch } from "./hooks/useDebouncedSearch";
 import type { GameSearchResult } from "../shared/types";
 import type { ApiSource } from "../shared/types";
+import { SPACING } from "../shared/styles";
 
 const getAppName = callable<[number], string>("get_app_name");
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
@@ -29,6 +32,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const [inputMode, setInputMode] = useState<"appid" | "search">("appid");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   const { results: searchResults, searching } = useDebouncedSearch(searchQuery, inputMode);
 
@@ -53,8 +57,16 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
       setResolvedName("");
       return;
     }
-    const name = await getAppName(id);
-    setResolvedName(name);
+    setResolvedName("");
+    setResolving(true);
+    try {
+      const name = await getAppName(id);
+      setResolvedName(name);
+    } catch {
+      setResolvedName("");
+    } finally {
+      setResolving(false);
+    }
   }, [appidInput]);
 
   const handleSearchSelect = (result: GameSearchResult) => {
@@ -86,7 +98,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   return (
     <>
       <PanelSectionRow>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+        <ControlsList spacing="standard">
           <ButtonItem
             layout="below"
             onClick={() => handleModeChange("appid")}
@@ -101,7 +113,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
           >
             Search
           </ButtonItem>
-        </div>
+        </ControlsList>
       </PanelSectionRow>
 
       {inputMode === "appid" && (
@@ -117,6 +129,16 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
           {resolvedName && (
             <PanelSectionRow>
               <div className={staticClasses.Label}>{resolvedName}</div>
+            </PanelSectionRow>
+          )}
+          {resolving && (
+            <PanelSectionRow>
+              <div style={{ display: "flex", alignItems: "center", gap: SPACING.controlsGap }}>
+                <SteamSpinner />
+                <span className={staticClasses.Label} style={{ color: "var(--gpSystemLighterGrey)" }}>
+                  Resolving game name...
+                </span>
+              </div>
             </PanelSectionRow>
           )}
           {!fastDownload && sources.length > 0 && (

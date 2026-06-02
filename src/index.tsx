@@ -4,6 +4,8 @@ import {
   ButtonItem,
   Navigation,
   staticClasses,
+  ControlsList,
+  ErrorBoundary,
 } from "@decky/ui";
 import {
   definePlugin,
@@ -16,37 +18,51 @@ import { ROUTES, PLUGIN_NAME } from "./shared/constants";
 import { DownloadPanel } from "./download/DownloadPanel";
 import { InstalledApps } from "./installed/InstalledApps";
 import { SettingsPanel } from "./settings/SettingsPanel";
+import { SPACING, BORDER } from "./shared/styles";
 
 function MainPanel() {
   return (
-    <PanelSection title={PLUGIN_NAME}>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => Navigation.Navigate(ROUTES.download)}
-        >
-          Download Lua Script
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => Navigation.Navigate(ROUTES.installed)}
-        >
-          Installed Scripts
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => Navigation.Navigate(ROUTES.settings)}
-        >
-          Settings
-        </ButtonItem>
-      </PanelSectionRow>
+    <div style={{ paddingTop: SPACING.panelTopPadding }}>
+      <PanelSection title={PLUGIN_NAME}>
+        <PanelSectionRow>
+          <div
+            className={staticClasses.Label}
+            style={{ color: "var(--gpSystemLighterGrey)", fontSize: "13px", marginBottom: SPACING.sectionGap }}
+          >
+            Lua script downloader for Steam games
+          </div>
+        </PanelSectionRow>
 
-      <RestartButton />
-    </PanelSection>
+        <PanelSectionRow>
+          <ControlsList spacing="standard">
+            <ButtonItem
+              layout="below"
+              onClick={() => Navigation.Navigate(ROUTES.download)}
+            >
+              Download Lua Script
+            </ButtonItem>
+            <ButtonItem
+              layout="below"
+              onClick={() => Navigation.Navigate(ROUTES.installed)}
+            >
+              Installed Scripts
+            </ButtonItem>
+            <ButtonItem
+              layout="below"
+              onClick={() => Navigation.Navigate(ROUTES.settings)}
+            >
+              Settings
+            </ButtonItem>
+          </ControlsList>
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+        </PanelSectionRow>
+
+        <RestartButton />
+      </PanelSection>
+    </div>
   );
 }
 
@@ -61,7 +77,11 @@ export default definePlugin(() => {
   return {
     name: PLUGIN_NAME,
     titleView: <div className={staticClasses.Title}>{PLUGIN_NAME}</div>,
-    content: <MainPanel />,
+    content: (
+      <ErrorBoundary>
+        <MainPanel />
+      </ErrorBoundary>
+    ),
     icon: <FaDownload />,
     onDismount() {
       console.log(`${PLUGIN_NAME} unloading`);

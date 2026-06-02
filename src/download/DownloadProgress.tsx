@@ -1,5 +1,5 @@
 import React from "react";
-import { PanelSectionRow, ButtonItem } from "@decky/ui";
+import { PanelSectionRow, ButtonItem, ProgressBarWithInfo } from "@decky/ui";
 import type { DownloadProgress as DownloadProgressType } from "../shared/types";
 
 interface DownloadProgressProps {
@@ -9,20 +9,25 @@ interface DownloadProgressProps {
 
 export function DownloadProgress({ state, onCancel }: DownloadProgressProps) {
   const isActive = !["done", "error", "cancelled"].includes(state.phase);
+  const isIndeterminate = state.percent <= 0 || state.phase === "fetching";
 
   return (
-    <PanelSectionRow>
-      <div>
-        <div>
-          {state.phase}: {state.message}
-        </div>
-        {state.percent > 0 && <div>Progress: {state.percent}%</div>}
-        {isActive && (
+    <>
+      <PanelSectionRow>
+        <ProgressBarWithInfo
+          nProgress={isIndeterminate ? undefined : state.percent}
+          indeterminate={isIndeterminate}
+          sOperationText={state.message}
+          nTransitionSec={0.5}
+        />
+      </PanelSectionRow>
+      {isActive && (
+        <PanelSectionRow>
           <ButtonItem layout="below" onClick={onCancel}>
-            Cancel
+            Cancel Download
           </ButtonItem>
-        )}
-      </div>
-    </PanelSectionRow>
+        </PanelSectionRow>
+      )}
+    </>
   );
 }

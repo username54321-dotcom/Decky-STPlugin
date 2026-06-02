@@ -28,4 +28,6 @@ export interface Settings {
   morrenusApiKey: string;
 }
 
-export type RestartState = "idle" | "confirming" | "restarting";
+// RestartState removed — useRestartSteam now uses boolean isRestarting internally.
+// Kept as export for backwards-compat; consumers should migrate.
+export type RestartState = "idle" | "restarting";
