@@ -4,14 +4,14 @@ import type { GameSearchResult } from "../../shared/types";
 
 const searchGames = callable<[string], GameSearchResult[]>("search_games");
 
-export function useDebouncedSearch(query: string, mode: "appid" | "search") {
+export function useDebouncedSearch(query: string) {
   const [results, setResults] = useState<GameSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (mode !== "search" || !query.trim()) {
+    if (!query.trim()) {
       setResults([]);
       setSearching(false);
       return;
@@ -41,7 +41,7 @@ export function useDebouncedSearch(query: string, mode: "appid" | "search") {
       clearTimeout(timerRef.current);
       cancelledRef.current = true;
     };
-  }, [query, mode]);
+  }, [query]);
 
   return { results, searching };
 }
