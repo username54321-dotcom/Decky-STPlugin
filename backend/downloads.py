@@ -168,6 +168,7 @@ async def download_lua(
     appid: int,
     preferred_source: str = "",
     api_key: str = "",
+    img_url: str = "",
 ) -> str | None:
     """
     Download a Lua script for the given app ID.
@@ -295,7 +296,7 @@ async def download_lua(
 
                     # Track installed app with name
                     app_name = await resolve_app_name(appid)
-                    _track_installed(appid, lua_dir, app_name)
+                    _track_installed(appid, lua_dir, app_name, img_url)
 
                     await decky.emit("download_progress", task_id, {
                         "task_id": task_id, "phase": "done",
@@ -373,11 +374,24 @@ def _extract_and_install(appid: int, zip_path: Path, lua_dir: Path) -> Path | No
         return dest
 
 
-def _track_installed(appid: int, lua_dir: Path, name: str = "") -> None:
-    """Append appid:name to loaded app tracking file."""
+def _track_installed(appid: int, lua_dir: Path, name: str = "", img_url: str = "") -> None:
+    """Append appid:name:img_url to loaded app tracking file."""
     tracking_file = lua_dir / "loadedappids.txt"
     try:
-        entry = f"{appid}:{name}" if name else str(appid)
+        if not img_url and tracking_file.exists():
+            for line in tracking_file.read_text().splitlines():
+                line = line.strip()
+                if line.startswith(f"{appid}:"):
+                    parts = line.split(":", 2)
+                    if len(parts) > 2:
+                        img_url = parts[2]
+                    break
+        if img_url:
+            entry = f"{appid}:{name}:{img_url}"
+        elif name:
+            entry = f"{appid}:{name}"
+        else:
+            entry = str(appid)
         lines = []
         if tracking_file.exists():
             lines = tracking_file.read_text().splitlines()
@@ -414,17 +428,18 @@ def get_installed_apps() -> list[dict[str, Any]]:
         if not line:
             continue
         if ":" in line:
-            # New format: appid:name
-            parts = line.split(":", 1)
+            # Format: appid:name or appid:name:img_url
+            parts = line.split(":", 2)
             try:
                 appid = int(parts[0])
                 name = parts[1] if len(parts) > 1 else ""
-                apps.append({"appid": appid, "name": name})
+                img_url = parts[2] if len(parts) > 2 else ""
+                apps.append({"appid": appid, "name": name, "img_url": img_url})
             except ValueError:
                 continue
         elif line.isdigit():
             # Legacy format: plain appid
-            apps.append({"appid": int(line), "name": ""})
+            apps.append({"appid": int(line), "name": "", "img_url": ""})
     return apps
 
 

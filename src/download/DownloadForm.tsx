@@ -16,7 +16,7 @@ const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
 
 interface DownloadFormProps {
-  onStart: (appid: number, source?: string) => void;
+  onStart: (appid: number, source?: string, imgUrl?: string) => void;
 }
 
 export function DownloadForm({ onStart }: DownloadFormProps) {
@@ -27,6 +27,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const [fastDownload, setFastDownload] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [selectedImg, setSelectedImg] = useState("");
 
   const { results: searchResults, searching } = useDebouncedSearch(searchQuery);
 
@@ -48,6 +49,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const handleSearchSelect = (result: GameSearchResult) => {
     setAppidInput(String(result.id));
     setResolvedName(result.name);
+    setSelectedImg(result.img);
     setSearchOpen(false);
     setSearchQuery("");
   };
@@ -57,7 +59,8 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     if (isNaN(id) || id <= 0) return;
 
     const source = fastDownload ? "" : selectedSource;
-    onStart(id, source);
+    onStart(id, source, selectedImg);
+    setSelectedImg("");
   };
 
   return (

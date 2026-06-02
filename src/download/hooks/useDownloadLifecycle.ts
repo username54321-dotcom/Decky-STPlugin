@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { callable, addEventListener, removeEventListener, toaster } from "@decky/api";
 import type { DownloadProgress } from "../../shared/types";
 
-const startDownload = callable<[number, string?], string>("start_download");
+const startDownload = callable<[number, string?, string?], string>("start_download");
 const cancelDownload = callable<[string], void>("cancel_download");
 
 export function useDownloadLifecycle(onComplete: () => void) {
@@ -44,8 +44,8 @@ export function useDownloadLifecycle(onComplete: () => void) {
     };
   }, [currentTaskIdRef.current, onComplete]);
 
-  const start = useCallback(async (appid: number, source?: string) => {
-    const taskId = await startDownload(appid, source);
+  const start = useCallback(async (appid: number, source?: string, imgUrl?: string) => {
+    const taskId = await startDownload(appid, source, imgUrl);
     currentTaskIdRef.current = taskId;
     setIsActive(true);
     setState({

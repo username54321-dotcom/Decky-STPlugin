@@ -21,6 +21,7 @@ export interface DownloadProgress {
 export interface InstalledApp {
   appid: number;
   name: string;
+  img_url?: string;
 }
 
 export interface Settings {

@@ -6,7 +6,7 @@ import type { InstalledApp } from "../shared/types";
 import { CARD, SPACING } from "../shared/styles";
 
 const deleteApp = callable<[number], boolean>("delete_app");
-const startDownload = callable<[number, string?], string>("start_download");
+const startDownload = callable<[number, string?, string?], string>("start_download");
 
 interface InstalledAppCardProps {
   app: InstalledApp;
@@ -17,7 +17,7 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
   const [imgError, setImgError] = useState(false);
   const [downloadError, setDownloadError] = useState(false);
 
-  const capsuleUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${app.appid}/capsule_231x87.jpg`;
+  const capsuleUrl = app.img_url || `https://cdn.cloudflare.steamstatic.com/steam/apps/${app.appid}/capsule_sm_120.jpg`;
 
   const handleDelete = () => {
     showModal(
@@ -58,84 +58,80 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
         border: downloadError ? "1px solid var(--gpSystemRed)" : CARD.border,
         borderRadius: CARD.borderRadius,
         padding: CARD.padding,
-        display: "flex",
-        gap: CARD.padding,
-        alignItems: "flex-start",
       }}
     >
-      {/* Capsule Image */}
-      <div style={{ flexShrink: 0, width: CARD.capsuleWidth, height: CARD.capsuleHeight }}>
-        {imgError ? (
+      <div style={{ display: "flex", gap: CARD.padding, alignItems: "flex-start" }}>
+        <div style={{ flexShrink: 0, width: CARD.capsuleWidth, height: CARD.capsuleHeight }}>
+          {imgError ? (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--gpBackgroundMedium)",
+                borderRadius: "4px",
+              }}
+            >
+              <FaGamepad style={{ color: "var(--gpSystemLighterGrey)", fontSize: "20px" }} />
+            </div>
+          ) : (
+            <img
+              src={capsuleUrl}
+              alt={app.name || `App ${app.appid}`}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "4px",
+              }}
+            />
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
+            className={staticClasses.Label}
             style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "var(--gpBackgroundMedium)",
-              borderRadius: "4px",
+              fontWeight: 600,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            <FaGamepad style={{ color: "var(--gpSystemLighterGrey)", fontSize: "20px" }} />
+            {app.name || `App ${app.appid}`}
           </div>
-        ) : (
-          <img
-            src={capsuleUrl}
-            alt={app.name || `App ${app.appid}`}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "4px",
-            }}
-          />
-        )}
-      </div>
-
-      {/* App Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          className={staticClasses.Label}
-          style={{
-            fontWeight: 600,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {app.name || `App ${app.appid}`}
-        </div>
-        <div
-          style={{
-            color: "var(--gpSystemLighterGrey)",
-            fontSize: "12px",
-            marginTop: "2px",
-          }}
-        >
-          App ID: {app.appid}
-        </div>
-        {downloadError && (
           <div
             style={{
-              color: "var(--gpSystemRed)",
+              color: "var(--gpSystemLighterGrey)",
               fontSize: "12px",
-              marginTop: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              marginTop: "2px",
             }}
           >
-            <FaExclamationTriangle style={{ fontSize: "10px" }} />
-            Download failed — click to retry
+            App ID: {app.appid}
           </div>
-        )}
+          {downloadError && (
+            <div
+              style={{
+                color: "var(--gpSystemRed)",
+                fontSize: "12px",
+                marginTop: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <FaExclamationTriangle style={{ fontSize: "10px" }} />
+              Download failed — click to retry
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Action Buttons */}
-      <div style={{ flexShrink: 0, display: "flex", gap: SPACING.controlsGap }}>
+      <div style={{ display: "flex", gap: SPACING.controlsGap, marginTop: "8px" }}>
         <ButtonItem layout="below" onClick={handleRedownload}>
           <FaRedo />
         </ButtonItem>

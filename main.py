@@ -104,7 +104,7 @@ class Plugin:
 
     # ── Download ──
 
-    async def start_download(self, appid: int, api_source: str = "") -> str:
+    async def start_download(self, appid: int, api_source: str = "", img_url: str = "") -> str:
         """
         Start Lua download for the given app ID.
 
@@ -118,7 +118,7 @@ class Plugin:
             try:
                 settings = _read_settings()
                 api_key = settings.get("morrenusApiKey", "")
-                await download_lua(task_id, appid, api_source, api_key)
+                await download_lua(task_id, appid, api_source, api_key, img_url)
             except Exception as exc:
                 decky.logger.error(f"Download failed for {appid}: {exc}")
                 await decky.emit("download_progress", task_id, {
@@ -163,7 +163,7 @@ class Plugin:
                 result = _extract_and_install(appid, zip_path, lua_dir)
                 from backend.downloads import _track_installed, resolve_app_name
                 app_name = await resolve_app_name(appid)
-                _track_installed(appid, lua_dir, app_name)
+                _track_installed(appid, lua_dir, app_name, "")
 
                 await decky.emit("download_progress", task_id, {
                     "task_id": task_id, "phase": "done",
