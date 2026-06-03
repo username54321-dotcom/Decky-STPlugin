@@ -5,3 +5,23 @@ __pycache__/
 *.pyc
 
 dist/
+
+# Python dependency bundling (installed during release)
+py_modules/httpx/
+py_modules/httpx-*.dist-info/
+py_modules/anyio/
+py_modules/anyio-*.dist-info/
+py_modules/certifi/
+py_modules/certifi-*.dist-info/
+py_modules/h11/
+py_modules/h11-*.dist-info/
+py_modules/httpcore/
+py_modules/httpcore-*.dist-info/
+py_modules/idna/
+py_modules/idna-*.dist-info/
+py_modules/sniffio/
+py_modules/sniffio-*.dist-info/
+
+# Release artifacts
+STPlugin-*.zip
+release/

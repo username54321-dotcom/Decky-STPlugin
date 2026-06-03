@@ -31,16 +31,21 @@ jobs:
       - name: Build frontend
         run: pnpm run build
 
-      - name: Create plugin ZIP
+      - name: Install Python dependencies into py_modules
+        run: pip install --target py_modules httpx
+
+      - name: Create plugin ZIP (nested structure)
         run: |
-          mkdir -p release
-          cp main.py release/
-          cp plugin.json release/
-          cp package.json release/
-          cp -r backend release/
-          cp -r dist release/
-          rm -rf release/backend/__pycache__
-          cd release && zip -r ../STPlugin-${{ github.ref_name }}.zip .
+          mkdir -p release/STPlugin
+          cp main.py release/STPlugin/
+          cp plugin.json release/STPlugin/
+          cp package.json release/STPlugin/
+          cp -r backend release/STPlugin/
+          cp -r dist release/STPlugin/
+          cp -r py_modules release/STPlugin/
+          rm -rf release/STPlugin/backend/__pycache__
+          rm -rf release/STPlugin/py_modules/__pycache__
+          cd release && zip -r ../STPlugin-${{ github.ref_name }}.zip STPlugin/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
