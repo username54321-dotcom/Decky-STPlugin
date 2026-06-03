@@ -8,11 +8,11 @@ import {
 import { callable } from "@decky/api";
 import React, { useState, useEffect } from "react";
 import { FaGamepad } from "react-icons/fa";
-import { GameSearchDropdown } from "./GameSearchDropdown";
-import { useDebouncedSearch } from "./hooks/useDebouncedSearch";
-import type { GameSearchResult } from "../shared/types";
-import type { ApiSource } from "../shared/types";
-import { CARD } from "../shared/styles";
+import { GameSearchDropdown } from "./download/components/GameSearchDropdown";
+import { useDebouncedSearch } from "./download/hooks/useDebouncedSearch";
+import type { GameSearchResult } from "./shared/types";
+import type { ApiSource } from "./shared/types";
+import { CARD } from "./shared/styles";
 
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");

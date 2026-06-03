@@ -50,19 +50,41 @@ Before making any code change or design decision, read these:
 5. **No direct DOM manipulation in GamepadUI.** Use Decky's module patching (`findModuleExport`, `afterPatch`, `createReactTreePatcher`) for React-rendered UI.
 6. **Windows-first, always fallback.** Code for Windows Decky Loader as primary target. Always provide cross-platform fallbacks using `pathlib.Path` and OS-agnostic APIs.
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 Decky-STPlugin/
-├── src/                    # TypeScript/React frontend (to be created)
-│   ├── index.tsx           # definePlugin() entry point + QAM panel
-│   ├── components/
-│   │   ├── GameSearchDropdown.tsx  # Game search results dropdown
-│   │   └── ...                     # Other components
-├── backend/                # Python modules (to be created)
-│   ├── downloads.py        # Download pipeline (trimmed from Millennium ~1200 lines)
-│   ├── api_manifest.py     # API source management (~60 lines)
-│   └── steam_paths.py      # Steam directory resolution (Windows registry + fallback)
+├── src/
+│   ├── index.tsx
+│   ├── DownloadPanel.tsx
+│   ├── DownloadForm.tsx
+│   ├── InstalledApps.tsx
+│   ├── SettingsPanel.tsx
+│   ├── download/
+│   │   ├── components/
+│   │   │   ├── DownloadProgress.tsx
+│   │   │   ├── GameSearchDropdown.tsx
+│   │   │   └── PostDownloadRestart.tsx
+│   │   └── hooks/
+│   │       ├── useDebouncedSearch.ts
+│   │       └── useDownloadLifecycle.ts
+│   ├── installed/
+│   │   └── components/
+│   │       ├── InstalledAppCard.tsx
+│   │       └── SkeletonCard.tsx
+│   └── shared/
+│       ├── types.ts
+│       ├── styles.ts
+│       ├── constants.ts
+│       ├── components/
+│       │   ├── PageLayout.tsx
+│       │   └── RestartButton.tsx
+│       └── hooks/
+│           └── useRestartSteam.ts
+├── backend/                # Python modules
+│   ├── downloads.py
+│   ├── api_manifest.py
+│   └── steam_paths.py
 ├── main.py                 # Python Plugin class — all backend RPC methods
 ├── plugin.json             # Decky manifest
 ├── package.json            # pnpm + @decky deps
@@ -74,8 +96,9 @@ Decky-STPlugin/
 │   └── superpowers/
 │       ├── specs/          # Design specs
 │       ├── plans/          # Implementation plans
-│   │       ├── 2026-06-02-game-search.md  # Game search implementation plan
-│   │       └── 2026-06-02-steam-restart-button.md  # Steam restart button implementation plan
+│   │       ├── 2026-06-02-game-search.md
+│   │       ├── 2026-06-02-steam-restart-button.md
+│   │       └── 2026-06-03-frontend-flat-restructure.md
 └── ltsteamplugin/          # Millennium reference (gitignored, not part of the build)
 ```
 

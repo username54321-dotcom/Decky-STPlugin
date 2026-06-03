@@ -1,5 +1,5 @@
 import React from "react";
-import { CARD } from "../shared/styles";
+import { CARD } from "../../shared/styles";
 
 export function SkeletonCard() {
   return (

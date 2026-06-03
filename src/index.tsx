@@ -15,9 +15,9 @@ import React from "react";
 import { FaDownload } from "react-icons/fa";
 import { RestartButton } from "./shared/components/RestartButton";
 import { ROUTES, PLUGIN_NAME } from "./shared/constants";
-import { DownloadPanel } from "./download/DownloadPanel";
-import { InstalledApps } from "./installed/InstalledApps";
-import { SettingsPanel } from "./settings/SettingsPanel";
+import { DownloadPanel } from "./DownloadPanel";
+import { InstalledApps } from "./InstalledApps";
+import { SettingsPanel } from "./SettingsPanel";
 import { SPACING, BORDER } from "./shared/styles";
 
 function MainPanel() {

@@ -2,8 +2,8 @@ import { ButtonItem, staticClasses, ControlsList, ConfirmModal, showModal } from
 import { callable, toaster } from "@decky/api";
 import React, { useState } from "react";
 import { FaTrash, FaRedo, FaGamepad, FaExclamationTriangle } from "react-icons/fa";
-import type { InstalledApp } from "../shared/types";
-import { CARD, SPACING } from "../shared/styles";
+import type { InstalledApp } from "../../shared/types";
+import { CARD, SPACING } from "../../shared/styles";
 
 const deleteApp = callable<[number], boolean>("delete_app");
 const startDownload = callable<[number, string?, string?], string>("start_download");

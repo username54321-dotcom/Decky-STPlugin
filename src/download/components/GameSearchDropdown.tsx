@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { staticClasses } from "@decky/ui";
-import type { GameSearchResult } from "../shared/types";
-import { COLOR, BORDER } from "../shared/styles";
+import type { GameSearchResult } from "../../shared/types";
+import { COLOR, BORDER } from "../../shared/styles";
 
 export interface GameSearchDropdownProps {
   results: GameSearchResult[];

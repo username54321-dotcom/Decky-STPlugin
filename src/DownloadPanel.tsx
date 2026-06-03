@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { DownloadForm } from "./DownloadForm";
-import { DownloadProgress } from "./DownloadProgress";
-import { PostDownloadRestart } from "./PostDownloadRestart";
-import { useDownloadLifecycle } from "./hooks/useDownloadLifecycle";
-import { PageLayout } from "../shared/components/PageLayout";
+import { DownloadProgress } from "./download/components/DownloadProgress";
+import { PostDownloadRestart } from "./download/components/PostDownloadRestart";
+import { useDownloadLifecycle } from "./download/hooks/useDownloadLifecycle";
+import { PageLayout } from "./shared/components/PageLayout";
 
 export function DownloadPanel() {
   const [showRestartPrompt, setShowRestartPrompt] = useState(false);

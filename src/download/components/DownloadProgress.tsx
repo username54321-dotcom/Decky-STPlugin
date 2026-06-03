@@ -1,6 +1,6 @@
 import React from "react";
 import { PanelSectionRow, ButtonItem, ProgressBarWithInfo } from "@decky/ui";
-import type { DownloadProgress as DownloadProgressType } from "../shared/types";
+import type { DownloadProgress as DownloadProgressType } from "../../shared/types";
 
 interface DownloadProgressProps {
   state: DownloadProgressType;

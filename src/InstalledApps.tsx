@@ -2,11 +2,11 @@ import { ButtonItem, staticClasses } from "@decky/ui";
 import { callable } from "@decky/api";
 import React, { useState, useEffect } from "react";
 import { FaBoxOpen, FaExclamationTriangle, FaSync } from "react-icons/fa";
-import type { InstalledApp } from "../shared/types";
-import { CARD, SPACING } from "../shared/styles";
-import { PageLayout } from "../shared/components/PageLayout";
-import { InstalledAppCard } from "./InstalledAppCard";
-import { SkeletonCard } from "./SkeletonCard";
+import type { InstalledApp } from "./shared/types";
+import { CARD, SPACING } from "./shared/styles";
+import { PageLayout } from "./shared/components/PageLayout";
+import { InstalledAppCard } from "./installed/components/InstalledAppCard";
+import { SkeletonCard } from "./installed/components/SkeletonCard";
 
 const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
 

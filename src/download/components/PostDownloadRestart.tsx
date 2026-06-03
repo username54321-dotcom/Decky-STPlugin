@@ -1,7 +1,7 @@
 import React from "react";
 import { PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui";
-import { RestartButton } from "../shared/components/RestartButton";
-import { COLOR, SPACING } from "../shared/styles";
+import { RestartButton } from "../../shared/components/RestartButton";
+import { COLOR, SPACING } from "../../shared/styles";
 
 interface PostDownloadRestartProps {
   onDismiss: () => void;

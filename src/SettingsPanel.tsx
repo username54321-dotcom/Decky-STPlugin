@@ -7,10 +7,10 @@ import {
 import { callable, toaster } from "@decky/api";
 import React, { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
-import type { Settings } from "../shared/types";
-import { SETTINGS_KEYS } from "../shared/constants";
-import { SPACING, BORDER } from "../shared/styles";
-import { PageLayout } from "../shared/components/PageLayout";
+import type { Settings } from "./shared/types";
+import { SETTINGS_KEYS } from "./shared/constants";
+import { SPACING, BORDER } from "./shared/styles";
+import { PageLayout } from "./shared/components/PageLayout";
 
 const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
