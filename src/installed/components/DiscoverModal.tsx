@@ -30,9 +30,10 @@ interface DiscoveredApp {
 
 interface DiscoverModalProps {
   onComplete: () => void;
+  onClose: () => void;
 }
 
-export function DiscoverModal({ onComplete }: DiscoverModalProps) {
+export function DiscoverModal({ onComplete, onClose }: DiscoverModalProps) {
   const [progress, setProgress] = useState<DiscoverProgress | null>(null);
   const [apps, setApps] = useState<DiscoveredApp[]>([]);
   const [isRunning, setIsRunning] = useState(true);
@@ -78,9 +79,9 @@ export function DiscoverModal({ onComplete }: DiscoverModalProps) {
   }, []);
 
   const handleClose = useCallback(() => {
-    setVisible(false);
+    onClose();
     onComplete();
-  }, [onComplete]);
+  }, [onClose, onComplete]);
 
   const handleRetry = useCallback(() => {
     setApps([]);

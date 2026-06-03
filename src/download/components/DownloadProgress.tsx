@@ -19,6 +19,8 @@ export function DownloadProgress({ state, onCancel }: DownloadProgressProps) {
           indeterminate={isIndeterminate}
           sOperationText={state.message}
           nTransitionSec={0.5}
+          bottomSeparator="none"
+          childrenContainerWidth="max"
         />
       </PanelSectionRow>
       {isActive && (

@@ -38,9 +38,10 @@ export function InstalledApps() {
   };
 
   const handleDiscover = useCallback(() => {
-    showModal(
+    const handle = showModal(
       <DiscoverModal
         onComplete={loadApps}
+        onClose={() => handle.Close()}
       />
     );
   }, [loadApps]);
