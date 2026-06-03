@@ -28,6 +28,7 @@ from backend.downloads import (
     cancel_task,
     cleanup_task,
     USER_AGENT,
+    discover_installed,
 )
 from backend.api_manifest import (
     get_api_sources,
@@ -199,6 +200,31 @@ class Plugin:
     async def delete_app(self, appid: int) -> bool:
         """Remove an installed Lua script."""
         return remove_lua(appid)
+
+    # ── Discover Installed ──
+
+    async def discover_installed_apps(self) -> dict[str, Any]:
+        """Scan stplug-in/ for .lua files, resolve names and images, rebuild tracking file.
+
+        Emits "discover_progress" events during processing.
+        Returns {"success": True, "discovered": N} or {"success": False, "error": "..."}.
+        """
+        total = 0
+        try:
+            async for event in discover_installed():
+                await decky.emit("discover_progress", event)
+                if event.get("step") == "error":
+                    return {"success": False, "error": event.get("error", "Unknown error")}
+                if event.get("step") == "done":
+                    total = event.get("total", 0)
+            return {"success": True, "discovered": total}
+        except Exception as exc:
+            decky.logger.error(f"discover_installed_apps failed: {exc}")
+            await decky.emit("discover_progress", {
+                "step": "error", "total": 0, "current": 0,
+                "message": str(exc), "error": str(exc),
+            })
+            return {"success": False, "error": str(exc)}
 
     # ── API Manifest ──
 
