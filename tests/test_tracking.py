@@ -128,3 +128,70 @@ class TestTrackingRoundTrip:
         content = (lua_dir / "loadedappids.txt").read_text(encoding="utf-8")
         assert "|Bad|" not in content
         assert "999|GameBadName|https://example.com/999.jpg" in content
+
+
+class TestFixMojibake:
+    """Tests for _fix_mojibake() — reverses CP1252/UTF-8 mojibake."""
+
+    def test_clean_text_unchanged(self):
+        """Normal Unicode text passes through untouched."""
+        from backend.downloads import _fix_mojibake
+        assert _fix_mojibake("LEGO\u00ae Batman\u2122") == "LEGO\u00ae Batman\u2122"
+
+    def test_ascii_unchanged(self):
+        """Pure ASCII passes through untouched."""
+        from backend.downloads import _fix_mojibake
+        assert _fix_mojibake("Slay the Spire 2") == "Slay the Spire 2"
+
+    def test_reverses_single_mojibake_registered(self):
+        """Reverses ® mojibake: UTF-8 bytes C2 AE read as CP1252 → Â®."""
+        from backend.downloads import _fix_mojibake
+        mojibake = "\u00c2\u00ae"  # Â®
+        assert _fix_mojibake(mojibake) == "\u00ae"  # ®
+
+    def test_reverses_single_mojibake_trademark(self):
+        """Reverses ™ mojibake: UTF-8 bytes E2 84 A2 read as CP1252 → â„¢."""
+        from backend.downloads import _fix_mojibake
+        mojibake = "\u00e2\u201e\u00a2"  # â„¢
+        assert _fix_mojibake(mojibake) == "\u2122"  # ™
+
+    def test_reverses_single_mojibake_copyright(self):
+        """Reverses © mojibake: UTF-8 bytes C2 A9 read as CP1252 → Â©."""
+        from backend.downloads import _fix_mojibake
+        mojibake = "\u00c2\u00a9"  # Â©
+        assert _fix_mojibake(mojibake) == "\u00a9"  # ©
+
+    def test_reverses_double_mojibake(self):
+        """Reverses double mojibake (2 rounds of encoding corruption)."""
+        from backend.downloads import _fix_mojibake
+        original = "\u00ae"  # ®
+        round1 = original.encode("utf-8").decode("cp1252")
+        round2 = round1.encode("utf-8").decode("cp1252")
+        assert _fix_mojibake(round2) == original
+
+    def test_reverses_triple_mojibake(self):
+        """Reverses triple mojibake (3 rounds of encoding corruption)."""
+        from backend.downloads import _fix_mojibake
+        original = "\u00ae"  # ®
+        text = original
+        for _ in range(3):
+            text = text.encode("utf-8").decode("cp1252")
+        assert _fix_mojibake(text) == original
+
+    def test_mixed_clean_and_garbled(self):
+        """Text with some clean and some garbled chars."""
+        from backend.downloads import _fix_mojibake
+        garbled_tm = "\u00e2\u201e\u00a2"  # â„¢ (mojibake of ™)
+        text = f"Batman{garbled_tm}"
+        assert _fix_mojibake(text) == "Batman\u2122"  # Batman™
+
+    def test_full_game_title_mojibake(self):
+        """Reverses mojibake in a realistic game title."""
+        from backend.downloads import _fix_mojibake
+        original = "LEGO\u00ae Batman\u2122"
+        mojibake = original.encode("utf-8").decode("cp1252")
+        assert _fix_mojibake(mojibake) == original
+
+    def test_empty_string(self):
+        from backend.downloads import _fix_mojibake
+        assert _fix_mojibake("") == ""

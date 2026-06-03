@@ -381,6 +381,34 @@ def _sanitize_title(name: str) -> str:
     return name
 
 
+def _fix_mojibake(text: str) -> str:
+    """Detect and reverse CP1252/UTF-8 mojibake.
+
+    When UTF-8 bytes are misinterpreted as CP1252 (Windows codepage) and
+    then re-encoded as UTF-8, multi-byte characters become garbled. For
+    example, ™ (U+2122, UTF-8 bytes E2 84 A2) becomes â„¢ (â + „ + ¢)
+    when those bytes are read as CP1252.
+
+    This reversal works by encoding the text back to CP1252 bytes (which
+    recovers the original UTF-8 byte sequence) and decoding as UTF-8.
+
+    Handles multiple rounds of corruption (double, triple mojibake) via
+    a loop that stabilizes when no further reversal is possible.
+    """
+    if not text:
+        return text
+    current = text
+    for _ in range(5):  # Max 5 rounds of reversal
+        try:
+            recovered = current.encode("cp1252").decode("utf-8")
+            if recovered == current:
+                return current
+            current = recovered
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            break
+    return current
+
+
 def _parse_tracking_line(line: str) -> dict[str, Any] | None:
     """Parse a single line from loadedappids.txt.
 
