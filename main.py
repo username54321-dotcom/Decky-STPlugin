@@ -69,7 +69,7 @@ class Plugin:
 
         # Clean up stale restart scripts from previous runs
         settings_dir = Path(decky.DECKY_PLUGIN_SETTINGS_DIR)
-        for pattern in ["restart_steam.ps1", "restart_steam.sh"]:
+        for pattern in ["restart_steam.ps1", "restart_steam.sh", "restart_steam.bat"]:
             script = settings_dir / pattern
             if script.exists():
                 try:
@@ -308,20 +308,27 @@ class Plugin:
 
     @staticmethod
     def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None:
-        """Write and spawn PowerShell restart script (Windows)."""
+        """Write and spawn batch restart script (Windows)."""
         steam_exe = str(Path(steam_path) / "steam.exe")
-        script_path = settings_dir / "restart_steam.ps1"
+        script_path = settings_dir / "restart_steam.bat"
         script_path.write_text(
-            f'$steamPath = "{steam_exe}"\n'
-            "taskkill /F /IM steam.exe 2>$null\n"
-            "Start-Sleep -Seconds 3\n"
-            "while (Get-Process steam -ErrorAction SilentlyContinue) {"
-            " Start-Sleep -Seconds 1 }\n"
-            "Start-Process -FilePath $steamPath\n"
+            '@echo off\r\n'
+            'timeout /t 2 /nobreak >nul\r\n'
+            'taskkill /F /IM steam.exe >nul 2>&1\r\n'
+            ':waitloop\r\n'
+            'timeout /t 1 /nobreak >nul\r\n'
+            'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul\r\n'
+            'if not errorlevel 1 goto waitloop\r\n'
+            f'start "" "{steam_exe}"\r\n'
+            'del "%~f0"\r\n',
+            encoding="utf-8",
         )
         subprocess.Popen(
-            ["powershell", "-ExecutionPolicy", "Bypass", "-File", str(script_path)],
-            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+            ["cmd.exe", "/c", str(script_path)],
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
 
     @staticmethod
@@ -339,4 +346,7 @@ class Plugin:
         subprocess.Popen(
             ["bash", str(script_path)],
             start_new_session=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )

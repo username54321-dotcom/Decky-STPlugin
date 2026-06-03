@@ -59,7 +59,7 @@ class TestRestartSteam:
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only test")
     async def test_windows_script_contents(self):
-        """Verifies PowerShell script contains correct commands."""
+        """Verifies batch script contains correct commands."""
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("main.decky.DECKY_PLUGIN_SETTINGS_DIR", tmpdir):
                 with patch("main.get_steam_path", return_value="C:\\Steam"):
@@ -68,12 +68,13 @@ class TestRestartSteam:
                             plugin = _plugin_instance()
                             await plugin.restart_steam()
 
-                            script = Path(tmpdir) / "restart_steam.ps1"
+                            script = Path(tmpdir) / "restart_steam.bat"
                             content = script.read_text()
                             assert "steam.exe" in content
                             assert "taskkill /F /IM steam.exe" in content
-                            assert "Start-Process" in content
-                            assert "Start-Sleep -Seconds 3" in content
+                            assert "start \"\"" in content
+                            assert "@echo off" in content
+                            assert "timeout /t 2 /nobreak" in content
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform == "win32", reason="Linux-only test")
@@ -96,7 +97,7 @@ class TestRestartSteam:
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only test")
     async def test_detachment_windows(self):
-        """Verifies DETACHED_PROCESS | CREATE_NO_WINDOW flags."""
+        """Verifies cmd.exe /c and CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW."""
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("main.decky.DECKY_PLUGIN_SETTINGS_DIR", tmpdir):
                 with patch("main.get_steam_path", return_value="C:\\Steam"):
@@ -105,10 +106,11 @@ class TestRestartSteam:
                             plugin = _plugin_instance()
                             await plugin.restart_steam()
 
-                            _, kwargs = mock_popen.call_args
+                            args, kwargs = mock_popen.call_args
+                            assert args[0] == ["cmd.exe", "/c", str(Path(tmpdir) / "restart_steam.bat")]
                             assert "creationflags" in kwargs
                             import subprocess
-                            expected = subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+                            expected = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
                             assert kwargs["creationflags"] == expected
 
     @pytest.mark.asyncio
@@ -137,8 +139,10 @@ class TestRestartSteamCleanup:
             # Create stale scripts
             ps1 = Path(tmpdir) / "restart_steam.ps1"
             sh = Path(tmpdir) / "restart_steam.sh"
+            bat = Path(tmpdir) / "restart_steam.bat"
             ps1.write_text("stale")
             sh.write_text("stale")
+            bat.write_text("stale")
 
             with patch("main.decky.DECKY_PLUGIN_SETTINGS_DIR", tmpdir):
                 with patch("main.refresh_manifest", return_value=[]):
@@ -147,6 +151,7 @@ class TestRestartSteamCleanup:
 
                     assert not ps1.exists()
                     assert not sh.exists()
+                    assert not bat.exists()
 
     @pytest.mark.asyncio
     async def test_cleanup_no_files_no_error(self):
