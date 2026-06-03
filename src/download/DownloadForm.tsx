@@ -7,10 +7,12 @@ import {
 } from "@decky/ui";
 import { callable } from "@decky/api";
 import React, { useState, useEffect } from "react";
+import { FaGamepad } from "react-icons/fa";
 import { GameSearchDropdown } from "./GameSearchDropdown";
 import { useDebouncedSearch } from "./hooks/useDebouncedSearch";
 import type { GameSearchResult } from "../shared/types";
 import type { ApiSource } from "../shared/types";
+import { CARD } from "../shared/styles";
 
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
@@ -28,6 +30,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedImg, setSelectedImg] = useState("");
+  const [imgError, setImgError] = useState(false);
 
   const { results: searchResults, searching } = useDebouncedSearch(searchQuery);
 
@@ -50,6 +53,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     setAppidInput(String(result.id));
     setResolvedName(result.name);
     setSelectedImg(result.img);
+    setImgError(false);
     setSearchOpen(false);
     setSearchQuery("");
   };
@@ -92,7 +96,49 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
       )}
       {resolvedName && !searchOpen && (
         <PanelSectionRow>
-          <div className={staticClasses.Label}>{resolvedName}</div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
+            <div style={{ flexShrink: 0, width: CARD.capsuleWidth, height: CARD.capsuleHeight }}>
+              {imgError ? (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--gpBackgroundMedium)",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <FaGamepad style={{ color: "var(--gpSystemLighterGrey)", fontSize: "20px" }} />
+                </div>
+              ) : (
+                <img
+                  src={selectedImg || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appidInput}/capsule_sm_120.jpg`}
+                  alt={resolvedName}
+                  loading="lazy"
+                  onError={() => setImgError(true)}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "4px",
+                  }}
+                />
+              )}
+            </div>
+            <div
+              className={staticClasses.Label}
+              style={{
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {resolvedName}
+            </div>
+          </div>
         </PanelSectionRow>
       )}
       {!fastDownload && sources.length > 0 && (
