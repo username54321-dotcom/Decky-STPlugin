@@ -82,11 +82,12 @@ async def _load_applist() -> None:
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.get(_APPLIST_URL, follow_redirects=True)
             resp.raise_for_status()
+            resp.encoding = "utf-8"
             data = resp.json()
             with _applist_lock:
                 for appid_str, name in data.items():
                     try:
-                        _applist_data[int(appid_str)] = str(name)
+                        _applist_data[int(appid_str)] = _fix_mojibake(str(name))
                     except (ValueError, TypeError):
                         pass
                 _applist_loaded = True
@@ -122,6 +123,7 @@ async def resolve_app_name(appid: int) -> str:
             url = f"https://store.steampowered.com/api/appdetails?appids={appid}"
             resp = await client.get(url, follow_redirects=True)
             resp.raise_for_status()
+            resp.encoding = "utf-8"
             data = resp.json()
             entry = data.get(str(appid)) or {}
             if isinstance(entry, dict):
@@ -129,6 +131,7 @@ async def resolve_app_name(appid: int) -> str:
                 name = inner.get("name", "")
                 if isinstance(name, str) and name.strip():
                     name = name.strip()
+                    name = _fix_mojibake(name)
                     with _app_name_cache_lock:
                         _app_name_cache[appid] = name
                     return name
