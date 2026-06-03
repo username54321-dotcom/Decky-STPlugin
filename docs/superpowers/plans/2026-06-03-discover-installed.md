@@ -580,14 +580,14 @@ interface DiscoveredApp {
 }
 
 interface DiscoverModalProps {
-  closeModal: () => void;
   onComplete: () => void;
 }
 
-export function DiscoverModal({ closeModal, onComplete }: DiscoverModalProps) {
+export function DiscoverModal({ onComplete }: DiscoverModalProps) {
   const [progress, setProgress] = useState<DiscoverProgress | null>(null);
   const [apps, setApps] = useState<DiscoveredApp[]>([]);
   const [isRunning, setIsRunning] = useState(true);
+  const [visible, setVisible] = useState(true);
   const startedRef = useRef(false);
 
   // Listen for progress events
@@ -632,19 +632,21 @@ export function DiscoverModal({ closeModal, onComplete }: DiscoverModalProps) {
   }, []);
 
   const handleClose = useCallback(() => {
-    closeModal();
+    setVisible(false);
     onComplete();
-  }, [closeModal, onComplete]);
+  }, [onComplete]);
 
   const handleRetry = useCallback(() => {
     setApps([]);
     setProgress(null);
     setIsRunning(true);
-    startedRef.current = false;
     discoverInstalledApps().catch(() => {
       setIsRunning(false);
     });
   }, []);
+
+  // Return null when closed — this unmounts ModalRoot
+  if (!visible) return null;
 
   const isError = progress?.step === "error";
   const isDone = progress?.step === "done";
@@ -889,14 +891,8 @@ export function InstalledApps() {
   const handleDiscover = useCallback(() => {
     showModal(
       <DiscoverModal
-        closeModal={() => {}}
         onComplete={loadApps}
-      />,
-      undefined,
-      {
-        strTitle: "Discover Installed Scripts",
-        fnOnClose: () => {},
-      }
+      />
     );
   }, [loadApps]);
 
