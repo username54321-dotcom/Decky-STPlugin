@@ -374,29 +374,59 @@ def _extract_and_install(appid: int, zip_path: Path, lua_dir: Path) -> Path | No
         return dest
 
 
+def _sanitize_title(name: str) -> str:
+    """Sanitize a game title for safe storage in the tracking file."""
+    name = re.sub(r"[\x00-\x1f\x7f|]", "", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def _parse_tracking_line(line: str) -> dict[str, Any] | None:
+    """Parse a single line from loadedappids.txt.
+
+    Format: appid|name|imageUrl (pipe-delimited).
+    """
+    line = line.strip()
+    if not line:
+        return None
+    if line.isdigit():
+        return {"appid": int(line), "name": "", "img_url": ""}
+    if "|" not in line:
+        return None
+    parts = line.split("|", 2)
+    try:
+        appid = int(parts[0])
+    except ValueError:
+        return None
+    name = parts[1] if len(parts) > 1 else ""
+    img_url = parts[2] if len(parts) > 2 else ""
+    return {"appid": appid, "name": name, "img_url": img_url}
+
+
 def _track_installed(appid: int, lua_dir: Path, name: str = "", img_url: str = "") -> None:
-    """Append appid:name:img_url to loaded app tracking file."""
+    """Append appid|name|img_url to loaded app tracking file."""
     tracking_file = lua_dir / "loadedappids.txt"
     try:
         if not img_url and tracking_file.exists():
             for line in tracking_file.read_text().splitlines():
                 line = line.strip()
-                if line.startswith(f"{appid}:"):
-                    parts = line.split(":", 2)
+                if line.startswith(f"{appid}|"):
+                    parts = line.split("|", 2)
                     if len(parts) > 2:
                         img_url = parts[2]
                     break
+        name = _sanitize_title(name)
         if img_url:
-            entry = f"{appid}:{name}:{img_url}"
+            entry = f"{appid}|{name}|{img_url}"
         elif name:
-            entry = f"{appid}:{name}"
+            entry = f"{appid}|{name}"
         else:
             entry = str(appid)
         lines = []
         if tracking_file.exists():
             lines = tracking_file.read_text().splitlines()
         appid_str = str(appid)
-        lines = [ln for ln in lines if not (ln.strip() == appid_str or ln.strip().startswith(f"{appid_str}:"))]
+        lines = [ln for ln in lines if not (ln.strip() == appid_str or ln.strip().startswith(f"{appid_str}|"))]
         lines.append(entry)
         with tracking_file.open("w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
@@ -424,22 +454,9 @@ def get_installed_apps() -> list[dict[str, Any]]:
 
     apps = []
     for line in tracking_file.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        if ":" in line:
-            # Format: appid:name or appid:name:img_url
-            parts = line.split(":", 2)
-            try:
-                appid = int(parts[0])
-                name = parts[1] if len(parts) > 1 else ""
-                img_url = parts[2] if len(parts) > 2 else ""
-                apps.append({"appid": appid, "name": name, "img_url": img_url})
-            except ValueError:
-                continue
-        elif line.isdigit():
-            # Legacy format: plain appid
-            apps.append({"appid": int(line), "name": "", "img_url": ""})
+        parsed = _parse_tracking_line(line)
+        if parsed is not None:
+            apps.append(parsed)
     return apps
 
 
@@ -452,9 +469,8 @@ def _remove_loaded_app(appid: int) -> None:
     if not tracking_file.exists():
         return
     lines = tracking_file.read_text().splitlines()
-    prefix = f"{appid}:"
+    prefix = f"{appid}|"
     new_lines = [line for line in lines if not line.strip().startswith(prefix)]
-    # Also handle legacy format (plain appid without name)
     new_lines = [line for line in new_lines if line.strip() != str(appid)]
     if len(new_lines) != len(lines):
         tracking_file.write_text("\n".join(new_lines) + "\n")
