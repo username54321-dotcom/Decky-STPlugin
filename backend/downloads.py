@@ -430,6 +430,7 @@ def _parse_tracking_line(line: str) -> dict[str, Any] | None:
     except ValueError:
         return None
     name = parts[1] if len(parts) > 1 else ""
+    name = _fix_mojibake(name)
     img_url = parts[2] if len(parts) > 2 else ""
     return {"appid": appid, "name": name, "img_url": img_url}
 
@@ -439,7 +440,7 @@ def _track_installed(appid: int, lua_dir: Path, name: str = "", img_url: str = "
     tracking_file = lua_dir / "loadedappids.txt"
     try:
         if not img_url and tracking_file.exists():
-            for line in tracking_file.read_text().splitlines():
+            for line in tracking_file.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if line.startswith(f"{appid}|"):
                     parts = line.split("|", 2)
@@ -455,7 +456,7 @@ def _track_installed(appid: int, lua_dir: Path, name: str = "", img_url: str = "
             entry = str(appid)
         lines = []
         if tracking_file.exists():
-            lines = tracking_file.read_text().splitlines()
+            lines = tracking_file.read_text(encoding="utf-8").splitlines()
         appid_str = str(appid)
         lines = [ln for ln in lines if not (ln.strip() == appid_str or ln.strip().startswith(f"{appid_str}|"))]
         lines.append(entry)
@@ -484,7 +485,7 @@ def get_installed_apps() -> list[dict[str, Any]]:
         return []
 
     apps = []
-    for line in tracking_file.read_text().splitlines():
+    for line in tracking_file.read_text(encoding="utf-8").splitlines():
         parsed = _parse_tracking_line(line)
         if parsed is not None:
             apps.append(parsed)
@@ -499,7 +500,7 @@ def _remove_loaded_app(appid: int) -> None:
     tracking_file = get_lua_dir(steam_path) / "loadedappids.txt"
     if not tracking_file.exists():
         return
-    lines = tracking_file.read_text().splitlines()
+    lines = tracking_file.read_text(encoding="utf-8").splitlines()
     prefix = f"{appid}|"
     new_lines = [line for line in lines if not line.strip().startswith(prefix)]
     new_lines = [line for line in new_lines if line.strip() != str(appid)]
