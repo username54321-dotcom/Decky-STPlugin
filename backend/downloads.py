@@ -441,6 +441,81 @@ async def _resolve_image_url(app_name: str) -> str:
     return ""
 
 
+async def discover_installed():
+    steam_path = get_steam_path()
+    if not steam_path:
+        yield {"step": "error", "total": 0, "current": 0, "message": "Steam installation not found", "error": "Steam installation not found"}
+        return
+
+    lua_dir = get_lua_dir(steam_path)
+    lua_dir.mkdir(parents=True, exist_ok=True)
+
+    # Scan for {digits}.lua files
+    appids = []
+    for f in lua_dir.iterdir():
+        if f.is_file() and re.fullmatch(r"\d+\.lua", f.name):
+            try:
+                appids.append(int(f.stem))
+            except ValueError:
+                pass
+
+    appids.sort()
+    total = len(appids)
+
+    yield {"step": "scanning", "total": total, "current": 0, "message": f"Found {total} Lua scripts"}
+
+    if total == 0:
+        yield {"step": "done", "total": 0, "current": 0, "message": "No Lua scripts found"}
+        return
+
+    # Clear existing tracking file
+    tracking_file = lua_dir / "loadedappids.txt"
+    try:
+        if tracking_file.exists():
+            tracking_file.unlink()
+    except OSError:
+        pass
+
+    # Process each app
+    for i, appid in enumerate(appids, start=1):
+        yield {
+            "step": "processing",
+            "current": i,
+            "total": total,
+            "appid": appid,
+            "message": f"Resolving {appid}...",
+        }
+
+        try:
+            name = await resolve_app_name(appid)
+        except Exception:
+            name = ""
+        if not name:
+            name = f"App {appid}"
+
+        try:
+            img_url = await _resolve_image_url(name)
+        except Exception:
+            img_url = ""
+
+        try:
+            _track_installed(appid, lua_dir, name, img_url)
+        except Exception:
+            pass
+
+        yield {
+            "step": "processing",
+            "current": i,
+            "total": total,
+            "appid": appid,
+            "app_name": name,
+            "img_url": img_url,
+            "message": f"Added {name}",
+        }
+
+    yield {"step": "done", "total": total, "current": total, "message": f"Discovered {total} scripts"}
+
+
 def _parse_tracking_line(line: str) -> dict[str, Any] | None:
     """Parse a single line from loadedappids.txt.
 
