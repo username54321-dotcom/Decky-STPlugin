@@ -412,6 +412,35 @@ def _fix_mojibake(text: str) -> str:
     return current
 
 
+async def _resolve_image_url(app_name: str) -> str:
+    if not app_name:
+        return ""
+
+    _rate_limit()
+    url = (
+        "https://store.steampowered.com/search/suggest"
+        f"?term={app_name}"
+        "&cc=US"
+        "&l=english"
+        "&realm=1"
+        "&f=jsonfull"
+        "&require_type=game,software"
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            raw = resp.json()
+            if raw and isinstance(raw, list) and len(raw) > 0:
+                img = raw[0].get("img", "")
+                if img:
+                    return str(img)
+    except Exception:
+        pass
+    return ""
+
+
 def _parse_tracking_line(line: str) -> dict[str, Any] | None:
     """Parse a single line from loadedappids.txt.
 
