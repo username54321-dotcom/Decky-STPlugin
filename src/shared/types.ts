@@ -24,6 +24,17 @@ export interface InstalledApp {
   img_url?: string;
 }
 
+export interface DiscoverProgress {
+  step: "scanning" | "processing" | "done" | "error";
+  current: number;
+  total: number;
+  appid?: number;
+  app_name?: string;
+  img_url?: string;
+  message: string;
+  error?: string;
+}
+
 export interface Settings {
   fastDownload: boolean;
   morrenusApiKey: string;
