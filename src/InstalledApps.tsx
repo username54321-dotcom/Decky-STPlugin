@@ -1,12 +1,13 @@
-import { ButtonItem, staticClasses } from "@decky/ui";
+import { ButtonItem, staticClasses, showModal } from "@decky/ui";
 import { callable } from "@decky/api";
-import React, { useState, useEffect } from "react";
-import { FaBoxOpen, FaExclamationTriangle, FaSync } from "react-icons/fa";
+import React, { useState, useEffect, useCallback } from "react";
+import { FaBoxOpen, FaExclamationTriangle, FaSync, FaSearch } from "react-icons/fa";
 import type { InstalledApp } from "./shared/types";
 import { CARD, SPACING } from "./shared/styles";
 import { PageLayout } from "./shared/components/PageLayout";
 import { InstalledAppCard } from "./installed/components/InstalledAppCard";
 import { SkeletonCard } from "./installed/components/SkeletonCard";
+import { DiscoverModal } from "./installed/components/DiscoverModal";
 
 const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
 
@@ -36,7 +37,14 @@ export function InstalledApps() {
     setApps((prev) => prev.filter((app) => app.appid !== appid));
   };
 
-  // Loading state
+  const handleDiscover = useCallback(() => {
+    showModal(
+      <DiscoverModal
+        onComplete={loadApps}
+      />
+    );
+  }, [loadApps]);
+
   if (state === "loading") {
     return (
       <PageLayout title="Installed Scripts">
@@ -50,7 +58,6 @@ export function InstalledApps() {
     );
   }
 
-  // Error state
   if (state === "error") {
     return (
       <PageLayout title="Installed Scripts">
@@ -75,12 +82,15 @@ export function InstalledApps() {
             <FaSync style={{ marginRight: "8px" }} />
             Retry
           </ButtonItem>
+          <ButtonItem onClick={handleDiscover}>
+            <FaSearch style={{ marginRight: "8px" }} />
+            Discover Installed
+          </ButtonItem>
         </div>
       </PageLayout>
     );
   }
 
-  // Empty state
   if (apps.length === 0) {
     return (
       <PageLayout title="Installed Scripts">
@@ -102,16 +112,25 @@ export function InstalledApps() {
             No Lua scripts installed yet.
           </div>
           <div style={{ color: "var(--gpSystemLighterGrey)", fontSize: "13px" }}>
-            Download one from the Search tab.
+            Download one from the Search tab, or discover existing scripts.
           </div>
+          <ButtonItem onClick={handleDiscover}>
+            <FaSearch style={{ marginRight: "8px" }} />
+            Discover Installed
+          </ButtonItem>
         </div>
       </PageLayout>
     );
   }
 
-  // Loaded state with cards
   return (
     <PageLayout title="Installed Scripts">
+      <div style={{ marginBottom: SPACING.sectionGap }}>
+        <ButtonItem layout="below" onClick={handleDiscover}>
+          <FaSearch style={{ marginRight: "8px" }} />
+          Discover Installed
+        </ButtonItem>
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: CARD.gap }}>
         {apps.map((app) => (
           <InstalledAppCard
