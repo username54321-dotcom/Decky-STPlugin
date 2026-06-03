@@ -1,9 +1,9 @@
-import { ButtonItem, staticClasses, ControlsList, ConfirmModal, showModal } from "@decky/ui";
+import { staticClasses, ConfirmModal, showModal } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState } from "react";
 import { FaTrash, FaRedo, FaGamepad, FaExclamationTriangle } from "react-icons/fa";
 import type { InstalledApp } from "../../shared/types";
-import { CARD, SPACING } from "../../shared/styles";
+import { CARD } from "../../shared/styles";
 
 const deleteApp = callable<[number], boolean>("delete_app");
 const startDownload = callable<[number, string?, string?], string>("start_download");
@@ -16,6 +16,8 @@ interface InstalledAppCardProps {
 export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
   const [imgError, setImgError] = useState(false);
   const [downloadError, setDownloadError] = useState(false);
+
+  const [hoveredBtn, setHoveredBtn] = useState<"redownload" | "delete" | null>(null);
 
   const capsuleUrl = app.img_url || `https://cdn.cloudflare.steamstatic.com/steam/apps/${app.appid}/capsule_sm_120.jpg`;
 
@@ -51,6 +53,21 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
     }
   };
 
+  const smallBtnStyle = (which: "redownload" | "delete"): React.CSSProperties => ({
+    width: "32px",
+    height: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "4px",
+    background: hoveredBtn === which ? "var(--gpBackgroundHard)" : "var(--gpBackgroundMedium)",
+    border: "none",
+    color: "var(--gpSystemLighterGrey)",
+    cursor: "pointer",
+    flexShrink: 0,
+    transition: "background 0.15s",
+  });
+
   return (
     <div
       style={{
@@ -60,7 +77,7 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
         padding: CARD.padding,
       }}
     >
-      <div style={{ display: "flex", gap: CARD.padding, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: CARD.padding, alignItems: "center" }}>
         <div style={{ flexShrink: 0, width: CARD.capsuleWidth, height: CARD.capsuleHeight }}>
           {imgError ? (
             <div
@@ -129,15 +146,27 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
             </div>
           )}
         </div>
-      </div>
 
-      <div style={{ display: "flex", gap: SPACING.controlsGap, marginTop: "8px" }}>
-        <ButtonItem layout="below" onClick={handleRedownload}>
-          <FaRedo />
-        </ButtonItem>
-        <ButtonItem layout="below" onClick={handleDelete}>
-          <FaTrash />
-        </ButtonItem>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: 0 }}>
+          <button
+            style={smallBtnStyle("redownload")}
+            onClick={handleRedownload}
+            onMouseEnter={() => setHoveredBtn("redownload")}
+            onMouseLeave={() => setHoveredBtn(null)}
+            title="Re-download"
+          >
+            <FaRedo />
+          </button>
+          <button
+            style={smallBtnStyle("delete")}
+            onClick={handleDelete}
+            onMouseEnter={() => setHoveredBtn("delete")}
+            onMouseLeave={() => setHoveredBtn(null)}
+            title="Delete"
+          >
+            <FaTrash />
+          </button>
+        </div>
       </div>
     </div>
   );
