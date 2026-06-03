@@ -14,6 +14,8 @@ export function PageLayout({ title, children }: PageLayoutProps) {
         marginRight: "auto",
         paddingTop: "72px",
         paddingBottom: "16px",
+        height: "100%",
+        overflowY: "auto",
       }}
     >
       <PanelSection title={title}>
