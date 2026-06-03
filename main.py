@@ -35,6 +35,7 @@ from backend.api_manifest import (
     get_cached_sources,
     refresh_manifest,
 )
+from backend.auto_update import check_for_update as _check_for_update, install_update as _install_update, UPDATE_CHECK_INTERVAL
 
 _SETTINGS_FILE = Path(decky.DECKY_PLUGIN_SETTINGS_DIR) / "settings.json"
 
@@ -85,9 +86,31 @@ class Plugin:
         except Exception as exc:
             decky.logger.warn(f"API manifest fetch failed: {exc}")
 
+        # Start background update checker
+        async def _update_checker():
+            while True:
+                try:
+                    await asyncio.sleep(UPDATE_CHECK_INTERVAL)
+                except asyncio.CancelledError:
+                    break
+                info = await _check_for_update()
+                if info and info.available:
+                    await decky.emit("update_available", {
+                        "current_version": info.current_version,
+                        "latest_version": info.latest_version,
+                        "release_url": info.release_url,
+                        "asset_url": info.asset_url,
+                        "checked_at": info.checked_at,
+                    })
+
+        self._update_task = asyncio.ensure_future(_update_checker())
+
     async def _unload(self) -> None:
         """Cleanup on plugin unload."""
         decky.logger.info("STPlugin unloading")
+        task = getattr(self, "_update_task", None)
+        if task:
+            task.cancel()
 
     # ── Steam Path ──
 
@@ -376,3 +399,23 @@ class Plugin:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
+    # ── Auto-Update ──
+
+    async def check_for_updates(self) -> dict:
+        info = await _check_for_update()
+        if info is None:
+            return {"error": "Failed to check for updates"}
+
+        return {
+            "available": info.available,
+            "current_version": info.current_version,
+            "latest_version": info.latest_version,
+            "release_url": info.release_url,
+            "asset_url": info.asset_url,
+            "checked_at": info.checked_at,
+        }
+
+    async def install_update(self, asset_url: str) -> dict:
+        success = await _install_update(asset_url)
+        return {"success": success}

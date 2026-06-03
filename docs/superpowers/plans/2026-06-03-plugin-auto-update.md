@@ -8,6 +8,14 @@
 
 **Tech Stack:** Python (httpx, zipfile, asyncio), TypeScript/React (@decky/api, @decky/ui), GitHub Actions
 
+> **⚠️ PREREQUISITES — What you must do on your side before this will work:**
+> 
+> 1. **Update `GITHUB_OWNER`** — In `backend/auto_update.py`, change `GITHUB_OWNER = "your-username"` to your actual GitHub username (line ~97).
+> 2. **Ensure GitHub Releases are enabled** — The repo must be hosted on GitHub with the Releases feature available (it's on by default for public repos).
+> 3. **Enable GitHub Actions** — Verify Actions are enabled in the repo Settings → Actions → General.
+> 4. **Push the first version tag** — Run `pnpm release:patch` (or create a tag manually like `git tag v0.1.0 && git push --tags`) to trigger the first CI/CD release build.
+> 5. **Verify `window.open` works in Decky** — The "View Release" buttons use `window.open(url, "_blank")`. Decky's embedded Chromium webview may block popups. Test this on a real Decky Loader instance. If it doesn't work, you'll need to use an alternative (e.g., `SteamClient.Browser.OpenURL` or a Decky-specific navigation API).
+
 ---
 
 ## File Structure
@@ -41,7 +49,7 @@
 ### Step 1: Write failing tests for version parsing
 
 ```python
-# backend/test_auto_update.py
+# tests/test_auto_update.py
 import pytest
 from backend.auto_update import parse_version, is_newer
 
@@ -72,7 +80,7 @@ def test_is_newer_with_v_prefix():
 
 ### Step 2: Run tests to verify they fail
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v`
 Expected: FAIL with "ModuleNotFoundError: No module named 'backend.auto_update'"
 
 ### Step 3: Implement version parsing functions
@@ -83,6 +91,7 @@ Expected: FAIL with "ModuleNotFoundError: No module named 'backend.auto_update'"
 
 import asyncio
 import tempfile
+import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -138,13 +147,13 @@ def is_newer(latest: str, current: str) -> bool:
 
 ### Step 4: Run tests to verify they pass
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v`
 Expected: PASS (8 tests)
 
 ### Step 5: Commit
 
 ```bash
-git add backend/auto_update.py backend/test_auto_update.py
+git add backend/auto_update.py tests/test_auto_update.py
 git commit -m "feat(update): add version parsing functions with tests"
 ```
 
@@ -159,7 +168,7 @@ git commit -m "feat(update): add version parsing functions with tests"
 ### Step 1: Write failing tests for GitHub API
 
 ```python
-# Add to backend/test_auto_update.py
+# Add to tests/test_auto_update.py
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -222,7 +231,7 @@ async def test_check_for_update_network_error():
 
 ### Step 2: Run tests to verify they fail
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v -k "check_for_update"`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v -k "check_for_update"`
 Expected: FAIL with "AttributeError: module 'backend.auto_update' has no attribute 'check_for_update'"
 
 ### Step 3: Implement GitHub API functions
@@ -231,12 +240,8 @@ Expected: FAIL with "AttributeError: module 'backend.auto_update' has no attribu
 # Add to backend/auto_update.py
 
 def _get_current_version() -> str:
-    """Get current plugin version from package.json."""
-    import json
-    package_json_path = Path(decky.DECKY_PLUGIN_DIR) / "package.json"
-    with open(package_json_path, "r") as f:
-        data = json.load(f)
-    return data.get("version", "0.0.0")
+    """Get current plugin version from the Decky runtime."""
+    return getattr(decky, "DECKY_PLUGIN_VERSION", "0.0.0")
 
 
 async def _fetch_latest_release() -> dict:
@@ -293,7 +298,7 @@ async def check_for_update() -> Optional[UpdateInfo]:
             latest_version=latest_version,
             release_url=release_url,
             asset_url=asset_url,
-            checked_at=asyncio.get_event_loop().time()
+            checked_at=time.time()
         )
     except httpx.TimeoutException:
         decky.logger.warning("Update check timed out")
@@ -311,13 +316,13 @@ async def check_for_update() -> Optional[UpdateInfo]:
 
 ### Step 4: Run tests to verify they pass
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v`
 Expected: PASS (11 tests)
 
 ### Step 5: Commit
 
 ```bash
-git add backend/auto_update.py backend/test_auto_update.py
+git add backend/auto_update.py tests/test_auto_update.py
 git commit -m "feat(update): add GitHub API integration for version checking"
 ```
 
@@ -332,7 +337,7 @@ git commit -m "feat(update): add GitHub API integration for version checking"
 ### Step 1: Write failing tests for installation
 
 ```python
-# Add to backend/test_auto_update.py
+# Add to tests/test_auto_update.py
 
 import tempfile
 import zipfile
@@ -399,7 +404,7 @@ async def test_install_update_download_failure():
 
 ### Step 2: Run tests to verify they fail
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v -k "install_update"`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v -k "install_update"`
 Expected: FAIL with "AttributeError: module 'backend.auto_update' has no attribute 'install_update'"
 
 ### Step 3: Implement installation functions
@@ -433,20 +438,35 @@ async def _download_update(asset_url: str) -> Optional[Path]:
 
 
 def _extract_update(zip_path: Path, target_dir: Path) -> bool:
-    """Extract update ZIP to target directory.
+    """Extract update ZIP to target directory via temp staging.
     
-    Args:
-        zip_path: Path to ZIP file
-        target_dir: Target directory for extraction
-    
-    Returns:
-        True on success, False on error
+    Extracts to a temporary directory first, validates required files
+    exist, then moves contents to target_dir. This prevents a partial
+    or corrupt installation if extraction fails mid-way.
     """
+    import shutil
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            # Extract all files, preserving directory structure
-            zf.extractall(target_dir)
-        return True
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                zf.extractall(tmp_dir)
+            
+            # Validate: at least main.py or package.json must exist
+            if not (tmp_dir / "main.py").exists() and not (tmp_dir / "package.json").exists():
+                decky.logger.error("ZIP missing required files (main.py or package.json)")
+                return False
+            
+            # Move files from temp to target, overwriting existing
+            for item in tmp_dir.iterdir():
+                dest = target_dir / item.name
+                if item.is_dir():
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.copytree(item, dest)
+                else:
+                    shutil.copy2(item, dest)
+            
+            return True
     except zipfile.BadZipFile:
         decky.logger.error("Invalid ZIP file")
         return False
@@ -490,13 +510,13 @@ async def install_update(asset_url: str) -> bool:
 
 ### Step 4: Run tests to verify they pass
 
-Run: `cd D:\Git\Decky-STPlugin && python -m pytest backend/test_auto_update.py -v`
+Run: `cd D:\Git\Decky-STPlugin && python -m pytest tests/test_auto_update.py -v`
 Expected: PASS (14 tests)
 
 ### Step 5: Commit
 
 ```bash
-git add backend/auto_update.py backend/test_auto_update.py
+git add backend/auto_update.py tests/test_auto_update.py
 git commit -m "feat(update): add update download and installation logic"
 ```
 
@@ -511,7 +531,7 @@ git commit -m "feat(update): add update download and installation logic"
 
 ```python
 # Add to imports at top of main.py
-from backend.auto_update import check_for_update as _check_for_update, install_update as _install_update, UpdateInfo
+from backend.auto_update import check_for_update as _check_for_update, install_update as _install_update, UpdateInfo, UPDATE_CHECK_INTERVAL
 
 # Add to Plugin class methods:
 
@@ -815,7 +835,11 @@ import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
                 <div style={{ display: "flex", gap: "8px" }}>
                     {updateStatus.releaseUrl && (
                         <ButtonItem
-                            onClick={() => window.open(updateStatus.releaseUrl!, "_blank")}
+                            onClick={() => {
+                                // ⚠️ Test this in Decky - webview may block window.open.
+                                // Fallback: SteamClient.Browser.OpenURL or similar API.
+                                window.open(updateStatus.releaseUrl!, "_blank");
+                            }}
                         >
                             View Release
                         </ButtonItem>
@@ -869,9 +893,10 @@ import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
 // Add to main component (Content or App):
 
     const { status: updateStatus, install } = useUpdateStatus();
+    const [bannerDismissed, setBannerDismissed] = useState(false);
 
     // Add this JSX at the top of the return, before other content:
-    {updateStatus.available && updateStatus.latestVersion && (
+    {updateStatus.available && updateStatus.latestVersion && !bannerDismissed && (
         <div style={{
             background: "rgba(0, 255, 0, 0.1)",
             border: "1px solid rgba(0, 255, 0, 0.3)",
@@ -888,7 +913,10 @@ import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
             <div style={{ display: "flex", gap: "8px" }}>
                 {updateStatus.releaseUrl && (
                     <ButtonItem
-                        onClick={() => window.open(updateStatus.releaseUrl!, "_blank")}
+                        onClick={() => {
+                            // ⚠️ Test in Decky first — webview may block popups.
+                            window.open(updateStatus.releaseUrl!, "_blank");
+                        }}
                     >
                         View
                     </ButtonItem>
@@ -899,10 +927,16 @@ import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
                 >
                     {updateStatus.installing ? "Installing..." : "Install"}
                 </ButtonItem>
+                <ButtonItem
+                    onClick={() => setBannerDismissed(true)}
+                >
+                    Dismiss
+                </ButtonItem>
             </div>
         </div>
     )}
 ```
+
 
 ### Step 3: Manual test
 
@@ -971,6 +1005,7 @@ jobs:
           cp package.json release/
           cp -r backend release/
           cp -r dist release/
+          rm -rf release/backend/__pycache__
           cd release && zip -r ../STPlugin-${{ github.ref_name }}.zip .
       
       - name: Create GitHub Release
@@ -1010,9 +1045,9 @@ git commit -m "ci: add GitHub Actions release workflow"
 ```json
 // Add to "scripts" in package.json:
 
-    "release:patch": "npm version patch && git push && git push --tags",
-    "release:minor": "npm version minor && git push && git push --tags",
-    "release:major": "npm version major && git push && git push --tags"
+    "release:patch": "pnpm version patch && git push && git push --tags",
+    "release:minor": "pnpm version minor && git push && git push --tags",
+    "release:major": "pnpm version major && git push && git push --tags"
 ```
 
 ### Step 2: Test locally

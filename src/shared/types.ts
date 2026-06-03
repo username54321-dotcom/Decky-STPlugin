@@ -43,3 +43,22 @@ export interface Settings {
 // RestartState removed — useRestartSteam now uses boolean isRestarting internally.
 // Kept as export for backwards-compat; consumers should migrate.
 export type RestartState = "idle" | "restarting";
+
+export interface UpdateInfo {
+    available: boolean;
+    current_version: string;
+    latest_version: string | null;
+    release_url: string | null;
+    asset_url: string | null;
+    checked_at: number | null;
+}
+
+export interface UpdateStatus {
+    available: boolean;
+    currentVersion: string;
+    latestVersion: string | null;
+    releaseUrl: string | null;
+    assetUrl: string | null;
+    checkedAt: number | null;
+    installing: boolean;
+}

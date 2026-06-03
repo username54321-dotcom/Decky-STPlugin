@@ -11,18 +11,61 @@ import {
   definePlugin,
   routerHook,
 } from "@decky/api";
-import React from "react";
+import React, { useState } from "react";
 import { FaDownload } from "react-icons/fa";
 import { RestartButton } from "./shared/components/RestartButton";
 import { ROUTES, PLUGIN_NAME } from "./shared/constants";
+import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
 import { DownloadPanel } from "./DownloadPanel";
 import { InstalledApps } from "./InstalledApps";
 import { SettingsPanel } from "./SettingsPanel";
 import { SPACING, BORDER } from "./shared/styles";
 
 function MainPanel() {
+  const { status: updateStatus, install } = useUpdateStatus();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   return (
     <div style={{ paddingTop: SPACING.panelTopPadding }}>
+      {updateStatus.available && updateStatus.latestVersion && !bannerDismissed && (
+        <div style={{
+          background: "rgba(0, 255, 0, 0.1)",
+          border: "1px solid rgba(0, 255, 0, 0.3)",
+          borderRadius: "4px",
+          padding: "12px",
+          margin: "8px 0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <div>
+            <span style={{ fontWeight: "bold" }}>Update Available: v{updateStatus.latestVersion}</span>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {updateStatus.releaseUrl && (
+              <ButtonItem
+                onClick={() => {
+                  window.open(updateStatus.releaseUrl!, "_blank");
+                }}
+              >
+                View
+              </ButtonItem>
+            )}
+            <ButtonItem
+              onClick={install}
+              disabled={updateStatus.installing}
+            >
+              {updateStatus.installing ? "Installing..." : "Install"}
+            </ButtonItem>
+            <ButtonItem
+              onClick={() => setBannerDismissed(true)}
+            >
+              Dismiss
+            </ButtonItem>
+          </div>
+        </div>
+      )}
+
       <PanelSection title={PLUGIN_NAME}>
         <PanelSectionRow>
           <div

@@ -11,6 +11,7 @@ import type { Settings } from "./shared/types";
 import { SETTINGS_KEYS } from "./shared/constants";
 import { SPACING, BORDER } from "./shared/styles";
 import { PageLayout } from "./shared/components/PageLayout";
+import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
 
 const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
@@ -19,6 +20,7 @@ const refreshApiManifest = callable<[], { name: string; url: string }[]>("refres
 export function SettingsPanel() {
   const [fastDownload, setFastDownload] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const { status: updateStatus, checkUpdate, install } = useUpdateStatus();
 
   useEffect(() => {
     getSettings().then((s) => {
@@ -80,6 +82,72 @@ export function SettingsPanel() {
           Refresh API Sources
         </ButtonItem>
       </PanelSectionRow>
+
+      <PanelSectionRow>
+        <div style={{ borderTop: BORDER.divider, margin: `${SPACING.dividerMargin} 0` }} />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <div style={{ fontWeight: "bold", marginBottom: "8px" }}>Plugin Updates</div>
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <div style={{ fontSize: "12px", color: "#8b929a" }}>
+          Current Version: {updateStatus.currentVersion}
+        </div>
+      </PanelSectionRow>
+
+      {updateStatus.checkedAt && (
+        <PanelSectionRow>
+          <div style={{ fontSize: "12px", color: "#8b929a" }}>
+            Last Checked: {new Date(updateStatus.checkedAt * 1000).toLocaleString()}
+          </div>
+        </PanelSectionRow>
+      )}
+
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={checkUpdate}
+          disabled={updateStatus.installing}
+        >
+          {updateStatus.installing ? "Installing..." : "Check for Updates"}
+        </ButtonItem>
+      </PanelSectionRow>
+
+      {updateStatus.available && updateStatus.latestVersion && (
+        <PanelSectionRow>
+          <div style={{
+            background: "rgba(0, 255, 0, 0.1)",
+            border: "1px solid rgba(0, 255, 0, 0.3)",
+            borderRadius: "4px",
+            padding: "8px",
+            marginBottom: "8px",
+          }}>
+            <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
+              Update Available: v{updateStatus.latestVersion}
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {updateStatus.releaseUrl && (
+                <ButtonItem
+                  onClick={() => {
+                    window.open(updateStatus.releaseUrl!, "_blank");
+                  }}
+                >
+                  View Release
+                </ButtonItem>
+              )}
+              <ButtonItem
+                layout="below"
+                onClick={install}
+                disabled={updateStatus.installing}
+              >
+                {updateStatus.installing ? "Installing..." : "Install Now"}
+              </ButtonItem>
+            </div>
+          </div>
+        </PanelSectionRow>
+      )}
     </PageLayout>
   );
 }
