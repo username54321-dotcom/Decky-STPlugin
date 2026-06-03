@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
+import backend.downloads as downloads
 from backend.downloads import _sanitize_title, _parse_tracking_line, _track_installed
 
 
@@ -195,3 +196,39 @@ class TestFixMojibake:
     def test_empty_string(self):
         from backend.downloads import _fix_mojibake
         assert _fix_mojibake("") == ""
+
+
+class TestMojibakeRoundTrip:
+    """Integration test: write garbled data, read it back repaired."""
+
+    def test_read_repairs_existing_mojibake_file(self, tmp_path):
+        """Simulate a file with CP1252 mojibake and verify repair on read."""
+        from backend.downloads import get_installed_apps
+        import backend.steam_paths as sp
+
+        original = "LEGO\u00ae Batman\u2122"
+        garbled = original.encode("utf-8").decode("cp1252")
+
+        tracking_file = tmp_path / "loadedappids.txt"
+        tracking_file.write_text(
+            f"2215200|{garbled}|https://example.com/img.jpg\n",
+            encoding="utf-8",
+        )
+
+        orig_get_steam = sp.get_steam_path
+        orig_get_lua = sp.get_lua_dir
+        orig_dl_steam = downloads.get_steam_path
+        orig_dl_lua = downloads.get_lua_dir
+        sp.get_steam_path = lambda: str(tmp_path)
+        sp.get_lua_dir = lambda p: tmp_path
+        downloads.get_steam_path = lambda: str(tmp_path)
+        downloads.get_lua_dir = lambda p: tmp_path
+        try:
+            apps = get_installed_apps()
+            assert len(apps) == 1
+            assert apps[0]["name"] == original
+        finally:
+            sp.get_steam_path = orig_get_steam
+            sp.get_lua_dir = orig_get_lua
+            downloads.get_steam_path = orig_dl_steam
+            downloads.get_lua_dir = orig_dl_lua
