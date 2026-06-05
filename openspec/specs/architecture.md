@@ -1,6 +1,6 @@
 # Architecture Specification
 
-> **Living document** — update this when file structure, component relationships, or data flow change.
+> **Living document** — updating this is **critical and not optional**. Update when file structure, component relationships, or data flow change.
 > Last updated: 2026-06-05
 
 ## Overview
@@ -32,10 +32,13 @@ Decky-STPlugin/
 │   │   └── components/
 │   │       ├── InstalledAppCard.tsx
 │   │       └── SkeletonCard.tsx
+│   ├── patches/
+│   │   └── PlayBarPatch.tsx        # PlayBar patch + ScriptStatusIcon component
 │   └── shared/
 │       ├── types.ts               # TypeScript interfaces
 │       ├── styles.ts              # Shared styles
 │       ├── constants.ts           # Constants
+│       ├── navigationState.ts     # Module-level appid passing for QAM navigation
 │       ├── components/
 │       │   ├── PageLayout.tsx
 │       │   └── RestartButton.tsx

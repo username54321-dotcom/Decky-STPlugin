@@ -1,6 +1,6 @@
 # Frontend Specification
 
-> **Living document** — update this when React components, Decky UI patterns, or hooks change.
+> **Living document** — updating this is **critical and not optional**. Update when React components, Decky UI patterns, or hooks change.
 > Last updated: 2026-06-05
 
 ## Overview
@@ -29,6 +29,16 @@ definePlugin(() => {
   return { name: "STPlugin" };
 });
 ```
+
+## PlayBar Patch
+
+Uses `findModuleExport` + `afterPatch` + `createReactTreePatcher` to inject a script-status icon into Steam's library PlayBar:
+- Finds LibraryApp module, patches its render to walk the tree for PlayBar
+- Multi-fingerprint fallback: "PlayBar", "PlayButton", "GameActions", "AppActions"
+- Injects `<ScriptStatusIcon>` component next to the play button
+- Icon shows green checkmark if Lua script installed, gray download arrow if not
+- Click navigates to installed panel (if installed) or download panel with appid pre-filled (if not)
+- Installed appids cached in module-level Set, refreshed on download/delete events
 
 ## Store Page Patch
 
