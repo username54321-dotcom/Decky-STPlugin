@@ -69,70 +69,9 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 1. **Keep this file current.** After any significant action (design decision, new file, architectural choice, completed milestone), update this file to reflect the new state. This is not optional.
 2. **Read before writing.** If the task involves the Millennium source or Decky patterns and you are unsure, read the relevant reference files first. Do not guess.
 3. **Decky first.** All new code uses Decky conventions (TypeScript/React frontend, `@decky/api`, `@decky/ui`, Python `Plugin` class with `async` methods, `decky` module). Do not replicate Millennium patterns (vanilla JS DOM injection, `Millennium.callServerMethod()`, `PluginUtils.Logger`).
-4. **YAGNI.** Only port features in the KEEP list above. The 7426-line vanilla JS monolith does not get a 1:1 rewrite — it gets restructured into proper React components.
+4. **Only port features in the KEEP list.** The 7426-line vanilla JS monolith does not get a 1:1 rewrite — it gets restructured into proper React components.
 5. **No direct DOM manipulation in GamepadUI.** Use Decky's module patching (`findModuleExport`, `afterPatch`, `createReactTreePatcher`) for React-rendered UI.
 6. **Windows-first, always fallback.** Code for Windows Decky Loader as primary target. Always provide cross-platform fallbacks using `pathlib.Path` and OS-agnostic APIs.
-
-## Project Structure
-
-```
-Decky-STPlugin/
-├── openspec/                  # Living specifications
-│   ├── project.md
-│   ├── specs/
-│   │   ├── architecture.md
-│   │   ├── backend.md
-│   │   ├── frontend.md
-│   │   └── api-contracts.md
-│   ├── changes/
-│   └── archive/
-├── src/
-│   ├── index.tsx
-│   ├── DownloadPanel.tsx
-│   ├── DownloadForm.tsx
-│   ├── InstalledApps.tsx
-│   ├── SettingsPanel.tsx
-│   ├── download/
-│   │   ├── components/
-│   │   │   ├── DownloadProgress.tsx
-│   │   │   ├── GameSearchDropdown.tsx
-│   │   │   └── PostDownloadRestart.tsx
-│   │   └── hooks/
-│   │       ├── useDebouncedSearch.ts
-│   │       └── useDownloadLifecycle.ts
-│   ├── installed/
-│   │   └── components/
-│   │       ├── InstalledAppCard.tsx
-│   │       └── SkeletonCard.tsx
-│   └── shared/
-│       ├── types.ts
-│       ├── styles.ts
-│       ├── constants.ts
-│       ├── components/
-│       │   ├── PageLayout.tsx
-│       │   └── RestartButton.tsx
-│       └── hooks/
-│           └── useRestartSteam.ts
-├── backend/                # Python modules
-│   ├── downloads.py
-│   ├── api_manifest.py
-│   └── steam_paths.py
-├── main.py                 # Python Plugin class — all backend RPC methods
-├── plugin.json             # Decky manifest
-├── package.json            # pnpm + @decky deps
-├── tsconfig.json           # TypeScript config
-├── rollup.config.js        # @decky/rollup preset
-├── docs/                   # Project documentation
-│   ├── references/
-│   │   └── decky-loader-plugin-development.md
-│   └── superpowers/
-│       ├── specs/          # Design specs
-│       ├── plans/          # Implementation plans
-│   │       ├── 2026-06-02-game-search.md
-│   │       ├── 2026-06-02-steam-restart-button.md
-│   │       └── 2026-06-03-frontend-flat-restructure.md
-└── ltsteamplugin/          # Millennium reference (gitignored, not part of the build)
-```
 
 ## Key Differences: Millennium → Decky
 
