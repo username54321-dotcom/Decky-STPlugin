@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { FaBoxOpen, FaExclamationTriangle, FaSync, FaSearch } from "react-icons/fa";
 import type { InstalledApp } from "./shared/types";
 import { CARD, SPACING } from "./shared/styles";
+import { removeAppid } from "./patches/PlayBarPatch";
 import { PageLayout } from "./shared/components/PageLayout";
 import { InstalledAppCard } from "./installed/components/InstalledAppCard";
 import { SkeletonCard } from "./installed/components/SkeletonCard";
@@ -35,6 +36,7 @@ export function InstalledApps() {
 
   const handleDeleteSuccess = (appid: number) => {
     setApps((prev) => prev.filter((app) => app.appid !== appid));
+    removeAppid(appid);
   };
 
   const handleDiscover = useCallback(() => {
