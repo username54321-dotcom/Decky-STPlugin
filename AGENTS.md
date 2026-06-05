@@ -25,7 +25,7 @@ Always code for Windows first with a cross-platform fallback. When in doubt, cho
 
 | Status | Features |
 |--------|----------|
-| ✅ **KEEP** | Lua download pipeline (4 API sources), QAM management panel, API manifest, fastDownload + morrenusApiKey settings, DLC warning, loaded apps tracking, download progress/cancel, URL-based download, Windows registry Steam path detection, **game name search** (Steam suggest proxy + dropdown UI), **Steam restart button** (main menu + post-download prompt) |
+| ✅ **KEEP** | Lua download pipeline (4 API sources), QAM management panel, API manifest, fastDownload + morrenusApiKey settings, DLC warning, loaded apps tracking, download progress/cancel, URL-based download, Windows registry Steam path detection, **game name search** (Steam suggest proxy + dropdown UI), **Steam restart button** (main menu + post-download prompt), **PlayBar script status icon** (library game page indicator + context-aware navigation) |
 | ❌ **DROP** | Game fixes system (entirely), 11 themes, 31 locales (English hardcoded only), SteamDB browser extension, key donation, games database (playability pills), playable warning |
 | ⏸️ **DEFER** | In-plugin update check (GitHub), non-English locales, additional settings |
 
@@ -55,14 +55,14 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 1. Read `openspec/specs/*.md` for context before any code change
 2. Use superpowers brainstorming skill for design exploration
 3. Use superpowers writing-plans skill for implementation planning
-4. After implementation, update `openspec/specs/*.md` if architecture changed
+4. **After implementation, update `openspec/specs/*.md` — this is mandatory, not optional.** If architecture changed, update the relevant spec immediately.
 
-### When to Update Living Specs
-- Project conventions or scope change → update `project.md`
-- New IPC method → update `backend.md`
-- New React component → update `frontend.md`
-- New TypeScript type → update `api-contracts.md`
-- File structure changes → update `architecture.md`
+### When to Update Living Specs (CRITICAL — NOT OPTIONAL)
+- Project conventions or scope change → update `project.md` **immediately**
+- New IPC method → update `backend.md` **immediately**
+- New React component → update `frontend.md` **immediately**
+- New TypeScript type → update `api-contracts.md` **immediately**
+- File structure changes → update `architecture.md` **immediately**
 
 ## Hard Rules
 
