@@ -12,6 +12,7 @@ import { GameSearchDropdown } from "./download/components/GameSearchDropdown";
 import { useDebouncedSearch } from "./download/hooks/useDebouncedSearch";
 import type { GameSearchResult } from "./shared/types";
 import type { ApiSource } from "./shared/types";
+import { getPendingAppid } from "./shared/navigationState";
 import { CARD } from "./shared/styles";
 
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
@@ -47,6 +48,13 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     getSettings().then((s) => setFastDownload(s.fastDownload)).catch(() => {
       setFastDownload(false);
     });
+  }, []);
+
+  useEffect(() => {
+    const pending = getPendingAppid();
+    if (pending !== null) {
+      setAppidInput(String(pending));
+    }
   }, []);
 
   const handleSearchSelect = (result: GameSearchResult) => {
