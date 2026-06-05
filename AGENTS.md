@@ -6,7 +6,7 @@ Port **LTSteamPlugin** (a Millennium desktop Steam plugin) to **Decky Loader** (
 
 ## Current State
 
-**Phase: Build — Tasks 1-14 complete.** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Game name search added (Steam `/search/suggest` proxy with debounced dropdown). Steam restart button added (main menu + post-download prompt). Tests pass (37/37). Build produces dist/index.js.
+**Phase: Build — Tasks 1-14 complete. OpenSpec integration complete (Task 15).** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Game name search added (Steam `/search/suggest` proxy with debounced dropdown). Steam restart button added (main menu + post-download prompt). Tests pass (37/37). Build produces dist/index.js. Living specs in `openspec/` replace 21 scattered superpowers spec files.
 
 ## Target Platform
 
@@ -35,11 +35,34 @@ Before making any code change or design decision, read these:
 
 | Priority | File | Purpose |
 |----------|------|---------|
-| 🔴 **Always** | `./ltsteamplugin/project_analysis.md` | Complete analysis of the Millennium plugin — architecture, backends, frontend, data flows, external APIs, technical debt |
-| 🔴 **Always** | `docs/references/decky-loader-plugin-development.md` | Decky development reference — file structure, APIs, components, lifecycle, communication, gotchas |
-| 🔴 **Always** | `docs/superpowers/specs/2026-06-01-ltsteamplugin-decky-port-design.md` | Approved design spec — feature scope, architecture, IPC contract, exclusions |
-| 🟡 **When unsure** | `./ltsteamplugin/backend/downloads.py` | Millennium download pipeline source (key reference for porting logic) |
-| 🟡 **When unsure** | `./ltsteamplugin/backend/api_manifest.py` | Millennium API manifest source (~100 lines) |
+| 🔴 **Always** | `openspec/project.md` | Project overview, conventions, scope |
+| 🔴 **Always** | `openspec/specs/architecture.md` | Overall plugin structure, file layout |
+| 🔴 **Always** | `openspec/specs/backend.md` | Python modules, IPC methods, error handling |
+| 🔴 **Always** | `openspec/specs/frontend.md` | React patterns, Decky UI components |
+| 🔴 **Always** | `openspec/specs/api-contracts.md` | TypeScript types, callable signatures |
+| 🟡 **When unsure** | `docs/references/decky-loader-plugin-development.md` | Decky API reference |
+| 🟡 **When unsure** | `./ltsteamplugin/project_analysis.md` | Millennium source analysis |
+
+## OpenSpec Integration
+
+This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living specifications.
+
+### Living Specs (Source of Truth)
+- `openspec/project.md` — Project overview, conventions, scope
+- `openspec/specs/` — Component specifications (architecture, backend, frontend, api-contracts)
+
+### Workflow
+1. Read `openspec/specs/*.md` for context before any code change
+2. Use superpowers brainstorming skill for design exploration
+3. Use superpowers writing-plans skill for implementation planning
+4. After implementation, update `openspec/specs/*.md` if architecture changed
+
+### When to Update Living Specs
+- Project conventions or scope change → update `project.md`
+- New IPC method → update `backend.md`
+- New React component → update `frontend.md`
+- New TypeScript type → update `api-contracts.md`
+- File structure changes → update `architecture.md`
 
 ## Hard Rules
 
@@ -54,6 +77,15 @@ Before making any code change or design decision, read these:
 
 ```
 Decky-STPlugin/
+├── openspec/                  # Living specifications
+│   ├── project.md
+│   ├── specs/
+│   │   ├── architecture.md
+│   │   ├── backend.md
+│   │   ├── frontend.md
+│   │   └── api-contracts.md
+│   ├── changes/
+│   └── archive/
 ├── src/
 │   ├── index.tsx
 │   ├── DownloadPanel.tsx
