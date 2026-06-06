@@ -1,4 +1,4 @@
-import { staticClasses, ConfirmModal, showModal } from "@decky/ui";
+import { staticClasses, ConfirmModal, showModal, Focusable } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState } from "react";
 import { FaTrash, FaRedo, FaGamepad, FaExclamationTriangle } from "react-icons/fa";
@@ -18,6 +18,7 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
   const [downloadError, setDownloadError] = useState(false);
 
   const [hoveredBtn, setHoveredBtn] = useState<"redownload" | "delete" | null>(null);
+  const [focusedBtn, setFocusedBtn] = useState<"redownload" | "delete" | null>(null);
 
   const capsuleUrl = app.img_url || `https://cdn.cloudflare.steamstatic.com/steam/apps/${app.appid}/capsule_sm_120.jpg`;
 
@@ -62,6 +63,8 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
     borderRadius: "4px",
     background: hoveredBtn === which ? "var(--gpBackgroundHard)" : "var(--gpBackgroundMedium)",
     border: "none",
+    outline: focusedBtn === which ? "2px solid var(--gpSystemLighterGrey)" : "none",
+    outlineOffset: "2px",
     color: "var(--gpSystemLighterGrey)",
     cursor: "pointer",
     flexShrink: 0,
@@ -147,26 +150,34 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
           )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: 0 }}>
-          <button
-            style={smallBtnStyle("redownload")}
-            onClick={handleRedownload}
-            onMouseEnter={() => setHoveredBtn("redownload")}
-            onMouseLeave={() => setHoveredBtn(null)}
-            title="Re-download"
-          >
-            <FaRedo />
-          </button>
-          <button
-            style={smallBtnStyle("delete")}
-            onClick={handleDelete}
-            onMouseEnter={() => setHoveredBtn("delete")}
-            onMouseLeave={() => setHoveredBtn(null)}
-            title="Delete"
-          >
-            <FaTrash />
-          </button>
-        </div>
+        <Focusable flow-children="column" style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: 0 }}>
+          <Focusable onActivate={handleRedownload}>
+            <button
+              style={smallBtnStyle("redownload")}
+              onClick={handleRedownload}
+              onMouseEnter={() => setHoveredBtn("redownload")}
+              onMouseLeave={() => setHoveredBtn(null)}
+              onFocus={() => setFocusedBtn("redownload")}
+              onBlur={() => setFocusedBtn(null)}
+              title="Re-download"
+            >
+              <FaRedo />
+            </button>
+          </Focusable>
+          <Focusable onActivate={handleDelete}>
+            <button
+              style={smallBtnStyle("delete")}
+              onClick={handleDelete}
+              onMouseEnter={() => setHoveredBtn("delete")}
+              onMouseLeave={() => setHoveredBtn(null)}
+              onFocus={() => setFocusedBtn("delete")}
+              onBlur={() => setFocusedBtn(null)}
+              title="Delete"
+            >
+              <FaTrash />
+            </button>
+          </Focusable>
+        </Focusable>
       </div>
     </div>
   );
