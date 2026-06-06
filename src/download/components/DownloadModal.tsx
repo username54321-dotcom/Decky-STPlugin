@@ -8,10 +8,10 @@ import {
   ProgressBarWithInfo,
   staticClasses,
 } from "@decky/ui";
-import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { FaCheckCircle, FaExclamationTriangle, FaGamepad } from "react-icons/fa";
 import { useDownloadLifecycle } from "../hooks/useDownloadLifecycle";
 import { useRestartSteam } from "../../shared/hooks/useRestartSteam";
-import { COLOR } from "../../shared/styles";
+import { COLOR, CARD } from "../../shared/styles";
 
 interface DownloadModalProps {
   appid: number;
@@ -21,10 +21,11 @@ interface DownloadModalProps {
   onClose: () => void;
 }
 
-export function DownloadModal({ appid, name, source, onClose }: DownloadModalProps) {
+export function DownloadModal({ appid, name, imgUrl, source, onClose }: DownloadModalProps) {
   const { confirmRestart } = useRestartSteam();
   const download = useDownloadLifecycle(() => {}, true);
   const [startError, setStartError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     download.start(appid, source).catch((err: any) => {
@@ -64,6 +65,51 @@ export function DownloadModal({ appid, name, source, onClose }: DownloadModalPro
         Download {name || `App ${appid}`}
       </DialogHeader>
       <DialogBody>
+        {(name || imgUrl) && !imgError && (
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ flexShrink: 0, width: CARD.capsuleWidth, height: CARD.capsuleHeight }}>
+              <img
+                src={imgUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/capsule_sm_120.jpg`}
+                alt={name || String(appid)}
+                loading="lazy"
+                onError={() => setImgError(true)}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" }}
+              />
+            </div>
+            <div
+              className={staticClasses.Label}
+              style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            >
+              {name || `App ${appid}`}
+            </div>
+          </div>
+        )}
+
+        {imgError && name && (
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "12px" }}>
+            <div
+              style={{
+                flexShrink: 0,
+                width: CARD.capsuleWidth,
+                height: CARD.capsuleHeight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--gpBackgroundMedium)",
+                borderRadius: "4px",
+              }}
+            >
+              <FaGamepad style={{ color: "var(--gpSystemLighterGrey)", fontSize: "20px" }} />
+            </div>
+            <div
+              className={staticClasses.Label}
+              style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            >
+              {name}
+            </div>
+          </div>
+        )}
+
         {isActive && download.state && (
           <ProgressBarWithInfo
             nProgress={
