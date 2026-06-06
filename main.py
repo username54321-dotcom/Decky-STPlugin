@@ -420,3 +420,8 @@ class Plugin:
     async def install_update(self, asset_url: str) -> dict:
         success = await _install_update(asset_url)
         return {"success": success}
+
+    # ── Plugin Info ──
+
+    async def get_plugin_version(self) -> str:
+        return getattr(decky, "DECKY_PLUGIN_VERSION", "0.0.0")

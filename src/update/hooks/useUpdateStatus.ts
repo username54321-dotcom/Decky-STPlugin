@@ -4,6 +4,7 @@ import type { UpdateInfo, UpdateStatus } from "../../shared/types";
 
 const checkForUpdates = callable<[], UpdateInfo | { error: string }>("check_for_updates");
 const installUpdate = callable<[string], { success: boolean }>("install_update");
+const getPluginVersion = callable<[], string>("get_plugin_version");
 
 export function useUpdateStatus() {
     const [status, setStatus] = useState<UpdateStatus>({
@@ -15,6 +16,16 @@ export function useUpdateStatus() {
         checkedAt: null,
         installing: false,
     });
+
+    useEffect(() => {
+        getPluginVersion()
+            .then(version => {
+                setStatus(prev => ({ ...prev, currentVersion: version }));
+            })
+            .catch(() => {
+                // Silently keep the hardcoded fallback
+            });
+    }, []);
 
     useEffect(() => {
         const handleUpdateAvailable = (info: {

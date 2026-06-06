@@ -44,6 +44,7 @@ const searchGames = callable<[string], GameSearchResult[]>("search_games");
 // Auto-update
 const checkForUpdates = callable<[], UpdateInfo>("check_for_updates");
 const installUpdate = callable<[string], { success: boolean }>("install_update");
+const getPluginVersion = callable<[], string>("get_plugin_version");
 ```
 
 ## TypeScript Interfaces

@@ -72,6 +72,7 @@ class Plugin:
 | `restart_steam` | — | `dict` | Returns `{"success": bool, "error?": str}`; platform-specific process restart |
 | `check_for_updates` | — | `dict` | Checks GitHub for newer plugin version |
 | `install_update` | `asset_url: str` | `dict` | Downloads and applies plugin update |
+| `get_plugin_version` | — | `str` | Returns the current plugin version from `decky.DECKY_PLUGIN_VERSION` |
 
 ## Download Pipeline (`backend/downloads.py`)
 
