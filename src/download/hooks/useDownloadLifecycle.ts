@@ -5,7 +5,7 @@ import type { DownloadProgress } from "../../shared/types";
 const startDownload = callable<[number, string?, string?], string>("start_download");
 const cancelDownload = callable<[string], void>("cancel_download");
 
-export function useDownloadLifecycle(onComplete: () => void) {
+export function useDownloadLifecycle(onComplete: () => void, suppressToasts?: boolean) {
   const [state, setState] = useState<DownloadProgress | null>(null);
   const [isActive, setIsActive] = useState(false);
   const currentTaskIdRef = useRef<string>("");
@@ -18,17 +18,21 @@ export function useDownloadLifecycle(onComplete: () => void) {
 
       if (progress.phase === "done") {
         setIsActive(false);
-        toaster.toast({
-          title: "STPlugin",
-          body: `Installed Lua for App ${progress.appid}`,
-        });
+        if (!suppressToasts) {
+          toaster.toast({
+            title: "STPlugin",
+            body: `Installed Lua for App ${progress.appid}`,
+          });
+        }
         onComplete();
       } else if (progress.phase === "error") {
         setIsActive(false);
-        toaster.toast({
-          title: "Download Failed",
-          body: progress.message || "Unknown error",
-        });
+        if (!suppressToasts) {
+          toaster.toast({
+            title: "Download Failed",
+            body: progress.message || "Unknown error",
+          });
+        }
       } else if (progress.phase === "cancelled") {
         setIsActive(false);
       }

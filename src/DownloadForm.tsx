@@ -19,7 +19,7 @@ const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
 
 interface DownloadFormProps {
-  onStart: (appid: number, source?: string, imgUrl?: string) => void;
+  onStart: (appid: number, source?: string, imgUrl?: string, name?: string) => void;
 }
 
 export function DownloadForm({ onStart }: DownloadFormProps) {
@@ -71,7 +71,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     if (isNaN(id) || id <= 0) return;
 
     const source = fastDownload ? "" : selectedSource;
-    onStart(id, source, selectedImg);
+    onStart(id, source, selectedImg, resolvedName);
     setSelectedImg("");
   };
 

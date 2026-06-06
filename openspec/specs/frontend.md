@@ -60,12 +60,8 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 - Game name search dropdown (Steam `/search/suggest` proxy with debounced dropdown)
 - API source picker dropdown (hidden when `fastDownload` is ON)
 - Download button
-- Progress section (visible during download):
-  - Progress bar (percentage)
-  - Phase text ("Downloading...", "Extracting...", "Installing...", "Done")
-  - Cancel button
-- Post-download restart prompt
-- States: idle → downloading → extracting → installing → done / error / cancelled
+- Opens `DownloadModal` via `showModal()` on start
+- States: idle only (modal handles progress/error/success)
 
 ### InstalledApps
 - List fetched via `get_installed_apps()`
@@ -78,6 +74,12 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 - `<TextField>` — morrenusApiKey
 - `<ButtonItem>` — "Refresh API Sources" → calls `refresh_api_manifest()`
 - `<ButtonItem>` — "Restart Steam" → calls `restart_steam()`
+
+### DownloadModal
+- Modal for downloading an app (opened from DownloadPanel or PlayBar)
+- Auto-starts download on mount via `useDownloadLifecycle` with `suppressToasts=true`
+- Three states: progress (`ProgressBarWithInfo`), success (checkmark + Restart/Close), error (retry + Close)
+- Auto-closes on cancel, shows Restart Steam button on completion
 
 ### RedownloadModal
 - Modal for re-downloading an installed app
@@ -107,6 +109,7 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 - Manages download state machine
 - Subscribes to `download_progress` events
 - Returns phase, percent, message, error
+- Accepts optional `suppressToasts?: boolean` parameter (when true, suppresses success/error toasts for modal usage)
 
 ### useRestartSteam
 - Wraps `restart_steam()` callable

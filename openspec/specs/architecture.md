@@ -22,9 +22,8 @@ Decky-STPlugin/
 │   ├── SettingsPanel.tsx          # QAM settings panel
 │   ├── download/
 │   │   ├── components/
-│   │   │   ├── DownloadProgress.tsx
-│   │   │   ├── GameSearchDropdown.tsx
-│   │   │   └── PostDownloadRestart.tsx
+│   │   │   ├── DownloadModal.tsx
+│   │   │   └── GameSearchDropdown.tsx
 │   │   └── hooks/
 │   │       ├── useDebouncedSearch.ts
 │   │       └── useDownloadLifecycle.ts
