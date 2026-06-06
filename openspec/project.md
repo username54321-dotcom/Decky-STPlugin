@@ -1,6 +1,6 @@
 # Decky-STPlugin
 
-> **Living document** — update this when project conventions, scope, or platform rules change.
+> **Living document** — updating this is **critical and not optional**. Update when project conventions, scope, or platform rules change.
 > Last updated: 2026-06-05
 
 ## Objective
