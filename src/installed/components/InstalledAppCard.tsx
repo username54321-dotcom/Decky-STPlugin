@@ -1,12 +1,12 @@
 import { staticClasses, ConfirmModal, showModal, Focusable } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState } from "react";
-import { FaTrash, FaRedo, FaGamepad, FaExclamationTriangle } from "react-icons/fa";
+import { FaTrash, FaRedo, FaGamepad } from "react-icons/fa";
 import type { InstalledApp } from "../../shared/types";
 import { CARD } from "../../shared/styles";
+import { RedownloadModal } from "./RedownloadModal";
 
 const deleteApp = callable<[number], boolean>("delete_app");
-const startDownload = callable<[number, string?, string?], string>("start_download");
 
 interface InstalledAppCardProps {
   app: InstalledApp;
@@ -15,7 +15,6 @@ interface InstalledAppCardProps {
 
 export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
   const [imgError, setImgError] = useState(false);
-  const [downloadError, setDownloadError] = useState(false);
 
   const [hoveredBtn, setHoveredBtn] = useState<"redownload" | "delete" | null>(null);
   const [focusedBtn, setFocusedBtn] = useState<"redownload" | "delete" | null>(null);
@@ -43,15 +42,10 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
     );
   };
 
-  const handleRedownload = async () => {
-    setDownloadError(false);
-    try {
-      await startDownload(app.appid);
-      toaster.toast({ title: "STPlugin", body: `Re-downloading ${app.name || `App ${app.appid}`}...` });
-    } catch {
-      setDownloadError(true);
-      toaster.toast({ title: "Error", body: "Failed to re-download script" });
-    }
+  const handleRedownload = () => {
+    const handle = showModal(
+      <RedownloadModal app={app} onClose={() => handle.Close()} />
+    );
   };
 
   const smallBtnStyle = (which: "redownload" | "delete"): React.CSSProperties => ({
@@ -75,7 +69,7 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
     <div
       style={{
         background: CARD.background,
-        border: downloadError ? "1px solid var(--gpSystemRed)" : CARD.border,
+        border: CARD.border,
         borderRadius: CARD.borderRadius,
         padding: CARD.padding,
       }}
@@ -133,21 +127,6 @@ export function InstalledAppCard({ app, onDelete }: InstalledAppCardProps) {
           >
             App ID: {app.appid}
           </div>
-          {downloadError && (
-            <div
-              style={{
-                color: "var(--gpSystemRed)",
-                fontSize: "12px",
-                marginTop: "4px",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <FaExclamationTriangle style={{ fontSize: "10px" }} />
-              Download failed — click to retry
-            </div>
-          )}
         </div>
 
         <Focusable flow-children="column" style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: 0 }}>

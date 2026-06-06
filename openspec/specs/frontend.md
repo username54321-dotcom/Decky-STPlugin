@@ -79,6 +79,12 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 - `<ButtonItem>` — "Refresh API Sources" → calls `refresh_api_manifest()`
 - `<ButtonItem>` — "Restart Steam" → calls `restart_steam()`
 
+### RedownloadModal
+- Modal for re-downloading an installed app
+- Auto-starts download on mount via `useDownloadLifecycle`
+- Three states: progress (ProgressBarWithInfo), success (checkmark + Restart/Close), error (retry + Close)
+- Auto-closes on cancel, shows Restart Steam button on completion
+
 ## Shared Components
 
 ### PageLayout
