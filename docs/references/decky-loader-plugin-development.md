@@ -798,7 +798,53 @@ const unpatch = afterPatch(
 unpatch.unpatch();
 ```
 
-### Walking the React Render Tree
+### Route Patching (PREFERRED)
+
+**Use `routerHook.addPatch` to inject into Steam's UI. This is the official Decky pattern and the one used by this project.** Avoid `findModuleExport` for UI injection — it is fragile and breaks on Steam updates.
+
+Reference: [Decky Wiki: Route Patching](https://wiki.deckbrew.xyz/en/plugin-dev/route-patching)
+Reference implementation: [ProtonDB Badges patchLibraryApp.tsx](https://github.com/OMGDuke/protondb-decky/blob/main/src/lib/patchLibraryApp.tsx)
+
+```ts
+import { afterPatch, createReactTreePatcher, findInReactTree } from "@decky/ui";
+import { routerHook } from "@decky/api";
+
+// 1. Hook into the route
+const patch = routerHook.addPatch('/library/app/:appId', (tree: any) => {
+  // 2. Find the route renderer component (has renderFunc)
+  const routeProps = findInReactTree(tree, (x: any) => x?.renderFunc);
+  if (!routeProps) return tree;
+
+  // 3. Patch renderFunc to get rendered children
+  const handler = createReactTreePatcher(
+    [
+      (tree: any) => findInReactTree(tree, (node: any) => {
+        const str = node?.type?.toString?.() || "";
+        return ["PlayBar", "PlayButton"].some(fp => str.includes(fp));
+      }),
+    ],
+    ([props, ret]: any) => {
+      const appid = props?.appid;
+      if (!appid || !ret?.props?.children) return ret;
+      // Splice your component into children
+      const children = Array.isArray(ret.props.children) ? ret.props.children : [ret.props.children];
+      ret.props.children = [...children, <YourComponent key="my-key" appid={appid} />];
+      return ret;
+    },
+    "LibraryApp:PlayBar"
+  );
+
+  afterPatch(routeProps, "renderFunc", handler);
+  return tree;
+});
+
+// 4. Clean up in onDismount
+// routerHook.removePatch('/library/app/:appId', patch);
+```
+
+### Walking the React Render Tree (LEGACY — avoid for new code)
+
+> **DEPRECATED:** The `findModuleExport` approach below is fragile. Use `routerHook.addPatch` (above) instead. This section is kept for reference only.
 
 ```ts
 import { afterPatch, createReactTreePatcher, findModuleExport } from "@decky/ui";
@@ -813,19 +859,17 @@ const unpatch = afterPatch(
   "type",
   createReactTreePatcher(
     [
-      // Step functions — find the target component in the tree
       (tree) => findInReactTree(tree,
         (node) => node?.type?.toString?.()?.includes("PlayBar")
       ),
     ],
-    // Handler — modify the matched component
     ([, ret]) => {
       if (ret?.props?.children) {
         ret.props.children.push(<button key="my-btn">My Action</button>);
       }
       return ret;
     },
-    "LibraryApp:PlayBar" // Debug label
+    "LibraryApp:PlayBar"
   )
 );
 ```

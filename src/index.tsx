@@ -14,7 +14,7 @@ import {
 import React, { useState } from "react";
 import { FaDownload } from "react-icons/fa";
 import { RestartButton } from "./shared/components/RestartButton";
-import { registerPlayBarPatch } from "./patches/PlayBarPatch";
+import { patchLibraryApp } from "./patches/PlayBarPatch";
 import { ROUTES, PLUGIN_NAME } from "./shared/constants";
 import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
 import { DownloadPanel } from "./DownloadPanel";
@@ -119,7 +119,7 @@ export default definePlugin(() => {
   routerHook.addRoute(ROUTES.settings, () => <SettingsPanel />, { exact: true });
 
   let cleanupPlayBarPatch: (() => void) | null = null;
-  registerPlayBarPatch().then((cleanup) => {
+  patchLibraryApp().then((cleanup) => {
     cleanupPlayBarPatch = cleanup;
   });
 

@@ -6,7 +6,7 @@ Port **LTSteamPlugin** (a Millennium desktop Steam plugin) to **Decky Loader** (
 
 ## Current State
 
-**Phase: Build — Tasks 1-14 complete. OpenSpec integration complete (Task 15).** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Game name search added (Steam `/search/suggest` proxy with debounced dropdown). Steam restart button added (main menu + post-download prompt). Tests pass (37/37). Build produces dist/index.js. Living specs in `openspec/` replace 21 scattered superpowers spec files.
+**Phase: Build — Tasks 1-14 complete. OpenSpec integration complete (Task 15).** Backend, frontend scaffolding, all QAM panels (Download, InstalledApps, Settings) are implemented. Game name search added (Steam `/search/suggest` proxy with debounced dropdown). Steam restart button added (main menu + post-download prompt). PlayBar route patch v2 designed (migrating from `findModuleExport` to `routerHook.addPatch`). Tests pass (37/37). Build produces dist/index.js. Living specs in `openspec/` replace 21 scattered superpowers spec files.
 
 ## Target Platform
 
@@ -70,7 +70,7 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 2. **Read before writing.** If the task involves the Millennium source or Decky patterns and you are unsure, read the relevant reference files first. Do not guess.
 3. **Decky first.** All new code uses Decky conventions (TypeScript/React frontend, `@decky/api`, `@decky/ui`, Python `Plugin` class with `async` methods, `decky` module). Do not replicate Millennium patterns (vanilla JS DOM injection, `Millennium.callServerMethod()`, `PluginUtils.Logger`).
 4. **Only port features in the KEEP list.** The 7426-line vanilla JS monolith does not get a 1:1 rewrite — it gets restructured into proper React components.
-5. **No direct DOM manipulation in GamepadUI.** Use Decky's module patching (`findModuleExport`, `afterPatch`, `createReactTreePatcher`) for React-rendered UI.
+5. **No direct DOM manipulation in GamepadUI.** Use Decky's **route patching** (`routerHook.addPatch`) for React-rendered UI injection. Route patching is the official Decky pattern (see [Decky Wiki](https://wiki.deckbrew.xyz/en/plugin-dev/route-patching) and ProtonDB Badges plugin). **Avoid `findModuleExport` for UI injection** — it is fragile, breaks on Steam updates, and is deprecated in this project. The `findModuleExport` approach in `docs/references/decky-loader-plugin-development.md` is marked LEGACY for reference only.
 6. **Windows-first, always fallback.** Code for Windows Decky Loader as primary target. Always provide cross-platform fallbacks using `pathlib.Path` and OS-agnostic APIs.
 
 ## Key Differences: Millennium → Decky
@@ -78,7 +78,7 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 | Concern | Millennium | Decky |
 |---------|-----------|-------|
 | Frontend language | Vanilla JS IIFE | TypeScript + React (TSX) |
-| UI injection | `document.querySelector` + DOM manipulation | React module patching (`afterPatch`, `createReactTreePatcher`) |
+| UI injection | `document.querySelector` + DOM manipulation | React route patching (`routerHook.addPatch`, `afterPatch`, `createReactTreePatcher`) |
 | Backend IPC | `Millennium.callServerMethod()` | `callable()` (TS) / async methods on Plugin class (Python) |
 | Events | `PluginUtils.Logger` bridge | `decky.emit()` → `addEventListener()` |
 | Settings | Custom JSON persistence | `decky.DECKY_PLUGIN_SETTINGS_DIR` |
