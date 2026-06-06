@@ -236,6 +236,7 @@ class Plugin:
         try:
             async for event in discover_installed():
                 await decky.emit("discover_progress", event)
+                await asyncio.sleep(0)
                 if event.get("step") == "error":
                     return {"success": False, "error": event.get("error", "Unknown error")}
                 if event.get("step") == "done":
