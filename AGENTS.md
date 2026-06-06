@@ -72,6 +72,7 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 4. **Only port features in the KEEP list.** The 7426-line vanilla JS monolith does not get a 1:1 rewrite — it gets restructured into proper React components.
 5. **No direct DOM manipulation in GamepadUI.** Use Decky's **route patching** (`routerHook.addPatch`) for React-rendered UI injection. Route patching is the official Decky pattern (see [Decky Wiki](https://wiki.deckbrew.xyz/en/plugin-dev/route-patching) and ProtonDB Badges plugin). **Avoid `findModuleExport` for UI injection** — it is fragile, breaks on Steam updates, and is deprecated in this project. The `findModuleExport` approach in `docs/references/decky-loader-plugin-development.md` is marked LEGACY for reference only.
 6. **Windows-first, always fallback.** Code for Windows Decky Loader as primary target. Always provide cross-platform fallbacks using `pathlib.Path` and OS-agnostic APIs.
+7. **Always fetch latest Decky docs via ctx7.** If asked a Decky-specific question, or whenever unsure about any Decky API, pattern, or concept, always run `npx ctx7@latest library decky-loader "<question>"` and `npx ctx7@latest docs <id> "<question>"` before answering or writing code. Do not rely on training data for Decky API details — it changes frequently.
 
 ## Key Differences: Millennium → Decky
 
