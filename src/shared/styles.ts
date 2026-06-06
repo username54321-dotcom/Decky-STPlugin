@@ -31,6 +31,33 @@ export const COLOR = {
   backgroundHard: "var(--gpBackgroundHard)",
 };
 
+export const BUTTON = {
+  base: {
+    flex: 1,
+    minWidth: 0,
+    padding: "8px 16px",
+    borderRadius: "4px",
+    color: "white",
+    fontSize: "14px",
+    fontWeight: "bold" as const,
+  } as React.CSSProperties,
+  secondary: {
+    background: "rgba(255, 255, 255, 0.1)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  primary: {
+    background: "rgba(0, 255, 0, 0.2)",
+    border: "1px solid rgba(0, 255, 0, 0.3)",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  disabled: {
+    background: "rgba(255, 255, 255, 0.05)",
+    cursor: "not-allowed",
+    opacity: 0.6,
+  } as React.CSSProperties,
+} as const;
+
 export const CARD = {
   background: "var(--gpBackgroundLight)",
   border: "1px solid var(--gpBackgroundMedium)",

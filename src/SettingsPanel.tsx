@@ -10,7 +10,7 @@ import React, { useState, useEffect } from "react";
 import { FaSync } from "react-icons/fa";
 import type { Settings } from "./shared/types";
 import { SETTINGS_KEYS } from "./shared/constants";
-import { SPACING, BORDER } from "./shared/styles";
+import { SPACING, BORDER, BUTTON } from "./shared/styles";
 import { PageLayout } from "./shared/components/PageLayout";
 import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
 import { UpdateInstalledModal } from "./update/components/UpdateInstalledModal";
@@ -129,18 +129,28 @@ export function SettingsPanel() {
             <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
               Update Available: v{updateStatus.latestVersion}
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {updateStatus.releaseUrl && (
-                <ButtonItem
+                <button
+                  style={{
+                    ...BUTTON.base,
+                    ...BUTTON.secondary,
+                  } as React.CSSProperties}
                   onClick={() => {
                     window.open(updateStatus.releaseUrl!, "_blank");
                   }}
                 >
                   View Release
-                </ButtonItem>
+                </button>
               )}
-              <ButtonItem
-                layout="below"
+              <button
+                style={{
+                  ...BUTTON.base,
+                  ...(updateStatus.installing
+                    ? BUTTON.disabled
+                    : BUTTON.primary
+                  ),
+                } as React.CSSProperties}
                 onClick={async () => {
                   const installed = await install();
                   if (installed && updateStatus.latestVersion) {
@@ -150,7 +160,7 @@ export function SettingsPanel() {
                 disabled={updateStatus.installing}
               >
                 {updateStatus.installing ? "Installing..." : "Install Now"}
-              </ButtonItem>
+              </button>
             </div>
           </div>
         </PanelSectionRow>

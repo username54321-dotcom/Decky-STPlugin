@@ -22,7 +22,7 @@ import { UpdateInstalledModal } from "./update/components/UpdateInstalledModal";
 import { DownloadPanel } from "./DownloadPanel";
 import { InstalledApps } from "./InstalledApps";
 import { SettingsPanel } from "./SettingsPanel";
-import { SPACING, BORDER } from "./shared/styles";
+import { SPACING, BORDER, BUTTON } from "./shared/styles";
 
 function MainPanel() {
   const { status: updateStatus, install } = useUpdateStatus();
@@ -44,17 +44,28 @@ function MainPanel() {
           <div>
             <span style={{ fontWeight: "bold" }}>Update Available: v{updateStatus.latestVersion}</span>
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {updateStatus.releaseUrl && (
-              <ButtonItem
+              <button
+                style={{
+                  ...BUTTON.base,
+                  ...BUTTON.secondary,
+                } as React.CSSProperties}
                 onClick={() => {
                   window.open(updateStatus.releaseUrl!, "_blank");
                 }}
               >
                 View
-              </ButtonItem>
+              </button>
             )}
-            <ButtonItem
+            <button
+              style={{
+                ...BUTTON.base,
+                ...(updateStatus.installing
+                  ? BUTTON.disabled
+                  : BUTTON.primary
+                ),
+              } as React.CSSProperties}
               onClick={async () => {
                 const installed = await install();
                 if (installed && updateStatus.latestVersion) {
@@ -64,12 +75,16 @@ function MainPanel() {
               disabled={updateStatus.installing}
             >
               {updateStatus.installing ? "Installing..." : "Install"}
-            </ButtonItem>
-            <ButtonItem
+            </button>
+            <button
+              style={{
+                ...BUTTON.base,
+                ...BUTTON.secondary,
+              } as React.CSSProperties}
               onClick={() => setBannerDismissed(true)}
             >
               Dismiss
-            </ButtonItem>
+            </button>
           </div>
         </div>
       )}
