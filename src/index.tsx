@@ -7,6 +7,7 @@ import {
   ControlsList,
   ErrorBoundary,
   showModal,
+  Focusable,
 } from "@decky/ui";
 import {
   definePlugin,
@@ -46,45 +47,56 @@ function MainPanel() {
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {updateStatus.releaseUrl && (
+              <Focusable onActivate={() => { window.open(updateStatus.releaseUrl!, "_blank"); }}>
+                <button
+                  style={{
+                    ...BUTTON.base,
+                    ...BUTTON.secondary,
+                  } as React.CSSProperties}
+                  onClick={() => {
+                    window.open(updateStatus.releaseUrl!, "_blank");
+                  }}
+                >
+                  View
+                </button>
+              </Focusable>
+            )}
+            <Focusable onActivate={updateStatus.installing ? undefined : async () => {
+              const installed = await install();
+              if (installed && updateStatus.latestVersion) {
+                showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+              }
+            }}>
+              <button
+                style={{
+                  ...BUTTON.base,
+                  ...(updateStatus.installing
+                    ? BUTTON.disabled
+                    : BUTTON.primary
+                  ),
+                } as React.CSSProperties}
+                onClick={async () => {
+                  const installed = await install();
+                  if (installed && updateStatus.latestVersion) {
+                    showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                  }
+                }}
+                disabled={updateStatus.installing}
+              >
+                {updateStatus.installing ? "Installing..." : "Install"}
+              </button>
+            </Focusable>
+            <Focusable onActivate={() => setBannerDismissed(true)}>
               <button
                 style={{
                   ...BUTTON.base,
                   ...BUTTON.secondary,
                 } as React.CSSProperties}
-                onClick={() => {
-                  window.open(updateStatus.releaseUrl!, "_blank");
-                }}
+                onClick={() => setBannerDismissed(true)}
               >
-                View
+                Dismiss
               </button>
-            )}
-            <button
-              style={{
-                ...BUTTON.base,
-                ...(updateStatus.installing
-                  ? BUTTON.disabled
-                  : BUTTON.primary
-                ),
-              } as React.CSSProperties}
-              onClick={async () => {
-                const installed = await install();
-                if (installed && updateStatus.latestVersion) {
-                  showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
-                }
-              }}
-              disabled={updateStatus.installing}
-            >
-              {updateStatus.installing ? "Installing..." : "Install"}
-            </button>
-            <button
-              style={{
-                ...BUTTON.base,
-                ...BUTTON.secondary,
-              } as React.CSSProperties}
-              onClick={() => setBannerDismissed(true)}
-            >
-              Dismiss
-            </button>
+            </Focusable>
           </div>
         </div>
       )}

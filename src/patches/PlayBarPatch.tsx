@@ -4,6 +4,7 @@ import {
   createReactTreePatcher,
   findInReactTree,
   Navigation,
+  Focusable,
 } from "@decky/ui";
 import { callable, addEventListener, removeEventListener, routerHook } from "@decky/api";
 
@@ -40,7 +41,7 @@ function ScriptStatusIcon({ appid }: { appid: number }) {
     setInstalled(_installedAppids.has(appid));
   });
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent | CustomEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (installed) {
@@ -68,14 +69,16 @@ function ScriptStatusIcon({ appid }: { appid: number }) {
   };
 
   return (
-    <div
-      key="stplugin-status"
-      onClick={handleClick}
-      style={textStyle}
-      title={installed ? "Lua script installed — click to manage" : "No Lua script — click to download"}
-    >
-      ST
-    </div>
+    <Focusable onActivate={handleClick}>
+      <div
+        key="stplugin-status"
+        onClick={handleClick}
+        style={textStyle}
+        title={installed ? "Lua script installed — click to manage" : "No Lua script — click to download"}
+      >
+        ST
+      </div>
+    </Focusable>
   );
 }
 

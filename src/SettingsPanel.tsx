@@ -4,6 +4,7 @@ import {
   TextField,
   ButtonItem,
   showModal,
+  Focusable,
 } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState, useEffect } from "react";
@@ -131,36 +132,45 @@ export function SettingsPanel() {
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {updateStatus.releaseUrl && (
+                <Focusable onActivate={() => { window.open(updateStatus.releaseUrl!, "_blank"); }}>
+                  <button
+                    style={{
+                      ...BUTTON.base,
+                      ...BUTTON.secondary,
+                    } as React.CSSProperties}
+                    onClick={() => {
+                      window.open(updateStatus.releaseUrl!, "_blank");
+                    }}
+                  >
+                    View Release
+                  </button>
+                </Focusable>
+              )}
+              <Focusable onActivate={updateStatus.installing ? undefined : async () => {
+                const installed = await install();
+                if (installed && updateStatus.latestVersion) {
+                  showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                }
+              }}>
                 <button
                   style={{
                     ...BUTTON.base,
-                    ...BUTTON.secondary,
+                    ...(updateStatus.installing
+                      ? BUTTON.disabled
+                      : BUTTON.primary
+                    ),
                   } as React.CSSProperties}
-                  onClick={() => {
-                    window.open(updateStatus.releaseUrl!, "_blank");
+                  onClick={async () => {
+                    const installed = await install();
+                    if (installed && updateStatus.latestVersion) {
+                      showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                    }
                   }}
+                  disabled={updateStatus.installing}
                 >
-                  View Release
+                  {updateStatus.installing ? "Installing..." : "Install Now"}
                 </button>
-              )}
-              <button
-                style={{
-                  ...BUTTON.base,
-                  ...(updateStatus.installing
-                    ? BUTTON.disabled
-                    : BUTTON.primary
-                  ),
-                } as React.CSSProperties}
-                onClick={async () => {
-                  const installed = await install();
-                  if (installed && updateStatus.latestVersion) {
-                    showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
-                  }
-                }}
-                disabled={updateStatus.installing}
-              >
-                {updateStatus.installing ? "Installing..." : "Install Now"}
-              </button>
+              </Focusable>
             </div>
           </div>
         </PanelSectionRow>

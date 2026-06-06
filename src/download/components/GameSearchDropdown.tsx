@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { staticClasses } from "@decky/ui";
+import { staticClasses, Focusable } from "@decky/ui";
 import type { GameSearchResult } from "../../shared/types";
 import { COLOR, BORDER } from "../../shared/styles";
 
@@ -45,59 +45,60 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
       }}
     >
       {results.map((result, i) => (
-        <div
-          key={result.id}
-          onClick={() => onSelect(result)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: "8px 12px",
-            cursor: "pointer",
-            borderBottom: `1px solid ${COLOR.backgroundLight}`,
-            backgroundColor: hoveredIndex === i ? COLOR.backgroundHard : "transparent",
-          }}
-          onMouseEnter={() => setHoveredIndex(i)}
-          onMouseLeave={() => setHoveredIndex(null)}
-        >
-          {result.img ? (
-            <img
-              src={result.img}
-              alt={result.name}
-              style={{
-                width: "120px",
-                height: "45px",
-                objectFit: "cover",
-                borderRadius: BORDER.cardRadius,
-                flexShrink: 0,
-              }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "120px",
-                height: "45px",
-                backgroundColor: COLOR.backgroundHard,
-                borderRadius: BORDER.cardRadius,
-                flexShrink: 0,
-              }}
-            />
-          )}
-          <span
-            className={staticClasses.Label}
+        <Focusable key={result.id} onActivate={() => onSelect(result)}>
+          <div
+            onClick={() => onSelect(result)}
             style={{
-              fontSize: "14px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "8px 12px",
+              cursor: "pointer",
+              borderBottom: `1px solid ${COLOR.backgroundLight}`,
+              backgroundColor: hoveredIndex === i ? COLOR.backgroundHard : "transparent",
             }}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
-            {result.name}
-          </span>
-        </div>
+            {result.img ? (
+              <img
+                src={result.img}
+                alt={result.name}
+                style={{
+                  width: "120px",
+                  height: "45px",
+                  objectFit: "cover",
+                  borderRadius: BORDER.cardRadius,
+                  flexShrink: 0,
+                }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "120px",
+                  height: "45px",
+                  backgroundColor: COLOR.backgroundHard,
+                  borderRadius: BORDER.cardRadius,
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <span
+              className={staticClasses.Label}
+              style={{
+                fontSize: "14px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {result.name}
+            </span>
+          </div>
+        </Focusable>
       ))}
     </div>
   );
