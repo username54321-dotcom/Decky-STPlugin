@@ -51,7 +51,7 @@ export function SettingsPanel() {
   };
 
   return (
-    <PageLayout title="Settings">
+    <PageLayout title="Settings" showBack>
       <PanelSectionRow>
         <ToggleField
           label="Fast Download"

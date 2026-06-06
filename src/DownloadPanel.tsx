@@ -10,7 +10,7 @@ export function DownloadPanel() {
   const download = useDownloadLifecycle(() => setShowRestartPrompt(true));
 
   return (
-    <PageLayout title="Download Lua Script">
+    <PageLayout title="Download Lua Script" showBack>
       {!download.isActive && !showRestartPrompt && (
         <DownloadForm onStart={download.start} />
       )}

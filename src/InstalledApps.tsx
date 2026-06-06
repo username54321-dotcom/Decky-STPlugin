@@ -50,7 +50,7 @@ export function InstalledApps() {
 
   if (state === "loading") {
     return (
-      <PageLayout title="Installed Scripts">
+      <PageLayout title="Installed Scripts" showBack>
         <style>{`@keyframes skeleton-pulse{0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: CARD.gap }}>
           <SkeletonCard />
@@ -63,7 +63,7 @@ export function InstalledApps() {
 
   if (state === "error") {
     return (
-      <PageLayout title="Installed Scripts">
+      <PageLayout title="Installed Scripts" showBack>
         <div
           style={{
             display: "flex",
@@ -96,7 +96,7 @@ export function InstalledApps() {
 
   if (apps.length === 0) {
     return (
-      <PageLayout title="Installed Scripts">
+      <PageLayout title="Installed Scripts" showBack>
         <div
           style={{
             display: "flex",
@@ -127,7 +127,7 @@ export function InstalledApps() {
   }
 
   return (
-    <PageLayout title="Installed Scripts">
+    <PageLayout title="Installed Scripts" showBack>
       <div style={{ marginBottom: SPACING.sectionGap }}>
         <ButtonItem layout="below" onClick={handleDiscover}>
           <FaSearch style={{ marginRight: "8px" }} />
