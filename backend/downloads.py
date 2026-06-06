@@ -478,14 +478,6 @@ async def discover_installed():
 
     # Process each app
     for i, appid in enumerate(appids, start=1):
-        yield {
-            "step": "processing",
-            "current": i,
-            "total": total,
-            "appid": appid,
-            "message": f"Resolving {appid}...",
-        }
-
         try:
             name = await resolve_app_name(appid)
         except Exception:
