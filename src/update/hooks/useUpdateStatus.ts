@@ -99,19 +99,28 @@ export function useUpdateStatus() {
         }
     }, []);
 
-    const install = useCallback(async () => {
-        if (!status.assetUrl) return;
+    const install = useCallback(async (): Promise<boolean> => {
+        if (!status.assetUrl) return false;
 
         setStatus(prev => ({ ...prev, installing: true }));
         try {
-            const result = await installUpdate(status.assetUrl!);
-            if (!result.success) {
+            const result = await installUpdate(status.assetUrl);
+            if (result.success) {
+                setStatus(prev => ({
+                    ...prev,
+                    available: false,
+                    installing: false,
+                }));
+                return true;
+            } else {
                 toaster.toast({ title: "Installation Failed", body: "Try manual install." });
                 setStatus(prev => ({ ...prev, installing: false }));
+                return false;
             }
         } catch (err) {
             toaster.toast({ title: "Installation Failed", body: String(err) });
             setStatus(prev => ({ ...prev, installing: false }));
+            return false;
         }
     }, [status.assetUrl]);
 

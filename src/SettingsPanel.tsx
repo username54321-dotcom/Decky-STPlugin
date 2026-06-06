@@ -3,6 +3,7 @@ import {
   ToggleField,
   TextField,
   ButtonItem,
+  showModal,
 } from "@decky/ui";
 import { callable, toaster } from "@decky/api";
 import React, { useState, useEffect } from "react";
@@ -12,6 +13,7 @@ import { SETTINGS_KEYS } from "./shared/constants";
 import { SPACING, BORDER } from "./shared/styles";
 import { PageLayout } from "./shared/components/PageLayout";
 import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
+import { UpdateInstalledModal } from "./update/components/UpdateInstalledModal";
 
 const getSettings = callable<[], Settings>("get_settings");
 const setSetting = callable<[string, any], void>("set_setting");
@@ -139,7 +141,12 @@ export function SettingsPanel() {
               )}
               <ButtonItem
                 layout="below"
-                onClick={install}
+                onClick={async () => {
+                  const installed = await install();
+                  if (installed && updateStatus.latestVersion) {
+                    showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                  }
+                }}
                 disabled={updateStatus.installing}
               >
                 {updateStatus.installing ? "Installing..." : "Install Now"}

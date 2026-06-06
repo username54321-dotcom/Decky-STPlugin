@@ -173,3 +173,53 @@ class TestInstallUpdate:
             result = await install_update("https://example.com/update.zip")
 
             assert result is False
+
+
+@pytest.mark.asyncio
+class TestInstallUpdateContract:
+    """Verify the callable contract that the frontend hook depends on."""
+
+    async def test_install_update_returns_true_on_success(self):
+        """install_update must return True when it emits update_installed."""
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+            zip_path = Path(tmp.name)
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                zf.writestr("main.py", "# test content")
+                zf.writestr("package.json", '{"version": "0.2.0"}')
+
+        try:
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_response = MagicMock()
+                mock_response.content = zip_path.read_bytes()
+                mock_response.raise_for_status = MagicMock()
+                mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+                    return_value=mock_response
+                )
+
+                with patch("backend.auto_update.decky") as mock_decky:
+                    mock_decky.DECKY_PLUGIN_DIR = tempfile.mkdtemp()
+                    mock_decky.emit = AsyncMock()
+
+                    result = await install_update(
+                        "https://example.com/update.zip"
+                    )
+
+                    assert result is True
+                    mock_decky.emit.assert_called_once_with(
+                        "update_installed", {}
+                    )
+        finally:
+            zip_path.unlink(missing_ok=True)
+
+    async def test_install_update_returns_false_on_failure(self):
+        """install_update must return False on download failure."""
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+                side_effect=httpx.TimeoutException("timeout")
+            )
+
+            result = await install_update(
+                "https://example.com/update.zip"
+            )
+
+            assert result is False

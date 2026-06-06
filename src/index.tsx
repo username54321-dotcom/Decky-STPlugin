@@ -6,6 +6,7 @@ import {
   staticClasses,
   ControlsList,
   ErrorBoundary,
+  showModal,
 } from "@decky/ui";
 import {
   definePlugin,
@@ -17,6 +18,7 @@ import { RestartButton } from "./shared/components/RestartButton";
 import { patchLibraryApp } from "./patches/PlayBarPatch";
 import { ROUTES, PLUGIN_NAME } from "./shared/constants";
 import { useUpdateStatus } from "./update/hooks/useUpdateStatus";
+import { UpdateInstalledModal } from "./update/components/UpdateInstalledModal";
 import { DownloadPanel } from "./DownloadPanel";
 import { InstalledApps } from "./InstalledApps";
 import { SettingsPanel } from "./SettingsPanel";
@@ -53,7 +55,12 @@ function MainPanel() {
               </ButtonItem>
             )}
             <ButtonItem
-              onClick={install}
+              onClick={async () => {
+                const installed = await install();
+                if (installed && updateStatus.latestVersion) {
+                  showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                }
+              }}
               disabled={updateStatus.installing}
             >
               {updateStatus.installing ? "Installing..." : "Install"}
