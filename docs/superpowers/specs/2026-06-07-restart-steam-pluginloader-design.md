@@ -25,11 +25,20 @@ A single script survives the PluginLoader process kill (since the Python runtime
 ```python
 @staticmethod
 def _resolve_plugin_loader_path() -> str | None:
-    """Locate PluginLoader_noconsole.exe. Returns path or None."""
-    candidates = [
-        Path(decky.DECKY_HOME) / "services" / "PluginLoader_noconsole.exe",
-        Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe",
-    ]
+    """Locate PluginLoader_noconsole.exe. Returns path or None.
+
+    Uses getattr to safely access decky.DECKY_HOME — it may not be
+    set on Windows Decky Loader installations.
+    """
+    candidates = []
+    decky_home = getattr(decky, "DECKY_HOME", None)
+    if decky_home:
+        candidates.append(
+            Path(decky_home) / "services" / "PluginLoader_noconsole.exe"
+        )
+    candidates.append(
+        Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe"
+    )
     for candidate in candidates:
         if candidate.exists():
             return str(candidate)
@@ -37,8 +46,9 @@ def _resolve_plugin_loader_path() -> str | None:
 ```
 
 - **Preference order:**
-  1. `decky.DECKY_HOME / "services" / "PluginLoader_noconsole.exe"` — set by Decky loader, standard location
+  1. `decky.DECKY_HOME / "services" / "PluginLoader_noconsole.exe"` — only if `DECKY_HOME` is set (safe access via `getattr`)
   2. `Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe"` — standard Windows install fallback
+- Uses `getattr(decky, "DECKY_HOME", None)` to avoid `AttributeError` crash on Windows where `DECKY_HOME` may not be defined
 - If neither found, returns `None` → script skips PluginLoader launch entirely (graceful degradation, Steam starts without it)
 
 ## 4. Batch Script Template

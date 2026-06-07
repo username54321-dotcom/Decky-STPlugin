@@ -394,14 +394,19 @@ class Plugin:
     def _resolve_plugin_loader_path() -> str | None:
         """Locate PluginLoader_noconsole.exe dynamically.
 
-        Checks decky.DECKY_HOME first (set by the Decky loader),
+        Uses getattr to safely check decky.DECKY_HOME (may not be set on Windows),
         then falls back to ~/homebrew/services/ (standard Windows install).
         Returns None if not found — the restart script will skip PluginLoader launch.
         """
-        candidates = [
-            Path(decky.DECKY_HOME) / "services" / "PluginLoader_noconsole.exe",
-            Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe",
-        ]
+        candidates: list[Path] = []
+        decky_home = getattr(decky, "DECKY_HOME", None)
+        if decky_home:
+            candidates.append(
+                Path(decky_home) / "services" / "PluginLoader_noconsole.exe"
+            )
+        candidates.append(
+            Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe"
+        )
         for candidate in candidates:
             if candidate.exists():
                 return str(candidate)

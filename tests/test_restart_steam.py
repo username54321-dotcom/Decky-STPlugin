@@ -226,3 +226,22 @@ class TestResolvePluginLoaderPath:
             with patch("main.decky.DECKY_HOME", tmpdir):
                 result = main.Plugin._resolve_plugin_loader_path()
                 assert result == str(pl_exe)
+
+    def test_uses_homebrew_fallback_when_decky_home_missing(self):
+        """Uses Path.home() fallback when decky.DECKY_HOME attribute is missing."""
+        import main
+        from unittest.mock import patch
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("main.Path.home") as mock_home:
+                mock_home.return_value = Path(tmpdir)
+                pl_dir = Path(tmpdir) / "homebrew" / "services"
+                pl_dir.mkdir(parents=True, exist_ok=True)
+                pl_exe = pl_dir / "PluginLoader_noconsole.exe"
+                pl_exe.touch()
+
+                with patch("main.decky") as mock_decky:
+                    del mock_decky.DECKY_HOME
+                    result = main.Plugin._resolve_plugin_loader_path()
+                    assert result == str(pl_exe)

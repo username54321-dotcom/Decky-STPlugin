@@ -50,6 +50,8 @@ class Plugin:
     def _spawn_restart_linux(settings_dir: Path) -> None
     @staticmethod
     def _resolve_plugin_loader_path() -> str | None
+    #   Uses getattr(decky, "DECKY_HOME", None) — DECKY_HOME may not be set on Windows.
+    #   Falls back to Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe"
 
     # Game search
     async def search_games(self, query: str) -> list[dict]

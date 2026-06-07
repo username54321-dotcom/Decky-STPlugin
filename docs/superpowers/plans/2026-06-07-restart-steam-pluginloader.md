@@ -336,7 +336,91 @@ git commit -m "docs: update backend spec for PluginLoader launch order"
 
 ---
 
-### Task 5: Final Verification
+### Task 5 (Post-Release Fix): Use `getattr` for `decky.DECKY_HOME` (Windows Safety)
+
+**Files:**
+- Modify: `main.py`
+- Test: `tests/test_restart_steam.py`
+- Docs: `openspec/specs/backend.md`
+- Docs: `docs/superpowers/specs/2026-06-07-restart-steam-pluginloader-design.md`
+
+**Why:** `decky.DECKY_HOME` is not reliably set on Windows Decky Loader installations. Direct attribute access raises `AttributeError` before the `Path.home()` fallback is reached, causing `_resolve_plugin_loader_path()` to crash and preventing the batch script from being written at all. The fix uses `getattr` for safe access.
+
+- [ ] **Step 1: Safe-access DECKY_HOME with getattr**
+
+  In `main.py`, replace `_resolve_plugin_loader_path()`:
+
+  ```python
+  @staticmethod
+  def _resolve_plugin_loader_path() -> str | None:
+      """Locate PluginLoader_noconsole.exe dynamically.
+
+      Uses getattr to safely check decky.DECKY_HOME (may not be set on Windows),
+      then falls back to ~/homebrew/services/ (standard Windows install).
+      Returns None if not found — the restart script will skip PluginLoader launch.
+      """
+      candidates = []
+      decky_home = getattr(decky, "DECKY_HOME", None)
+      if decky_home:
+          candidates.append(
+              Path(decky_home) / "services" / "PluginLoader_noconsole.exe"
+          )
+      candidates.append(
+          Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe"
+      )
+      for candidate in candidates:
+          if candidate.exists():
+              return str(candidate)
+      return None
+  ```
+
+- [ ] **Step 2: Add test for missing DECKY_HOME**
+
+  In `tests/test_restart_steam.py`, add to `TestResolvePluginLoaderPath`:
+
+  ```python
+  def test_uses_homebrew_fallback_when_decky_home_missing(self):
+      """Uses Path.home() fallback when decky.DECKY_HOME attribute is missing."""
+      import main
+      from unittest.mock import patch
+
+      import tempfile
+      with tempfile.TemporaryDirectory() as tmpdir:
+          # Create PluginLoader under ~/homebrew/services/
+          with patch("main.Path.home") as mock_home:
+              mock_home.return_value = Path(tmpdir)
+              pl_dir = Path(tmpdir) / "homebrew" / "services"
+              pl_dir.mkdir(parents=True, exist_ok=True)
+              pl_exe = pl_dir / "PluginLoader_noconsole.exe"
+              pl_exe.touch()
+
+              # Remove DECKY_HOME from the decky mock
+              with patch("main.decky") as mock_decky:
+                  del mock_decky.DECKY_HOME  # Simulate missing attribute
+                  result = main.Plugin._resolve_plugin_loader_path()
+                  assert result == str(pl_exe)
+  ```
+
+- [ ] **Step 3: Run tests to verify**
+
+  Run: `pytest tests/test_restart_steam.py::TestResolvePluginLoaderPath -v`
+  Expected: All 3 tests pass (existing 2 + new 1)
+
+- [ ] **Step 4: Run full test suite to check for regressions**
+
+  Run: `pytest -v`
+  Expected: All tests pass
+
+- [ ] **Step 5: Commit**
+
+  ```bash
+  git add main.py tests/test_restart_steam.py
+  git commit -m "fix(restart): safe-access decky.DECKY_HOME with getattr for Windows compat"
+  ```
+
+---
+
+### Task 6: Final Verification
 
 - [ ] **Step 1: Run full test suite**
 
