@@ -59,26 +59,53 @@ class TestRestartSteam:
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only test")
     async def test_windows_script_contents(self):
-        """Verifies batch script contains correct commands."""
+        """Verifies batch script contains PluginLoader launch + wait-loop before Steam."""
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("main.decky.DECKY_PLUGIN_SETTINGS_DIR", tmpdir):
                 with patch("main.get_steam_path", return_value="C:\\Steam"):
                     with patch("main.subprocess.Popen"):
                         with patch("main.sys.platform", "win32"):
-                            plugin = _plugin_instance()
-                            await plugin.restart_steam()
+                            with patch("main.Plugin._resolve_plugin_loader_path",
+                                       return_value="C:\\homebrew\\services\\PluginLoader_noconsole.exe"):
+                                plugin = _plugin_instance()
+                                await plugin.restart_steam()
 
-                            script = Path(tmpdir) / "restart_steam.bat"
-                            content = script.read_text()
-                            assert "steam.exe" in content
-                            assert "taskkill /F /IM steam.exe" in content
-                            assert "taskkill /F /IM PluginLoader.exe" in content
-                            assert "taskkill /F /IM PluginLoader_noconsole.exe" in content
-                            assert "PluginLoader.exe" in content
-                            assert "PluginLoader_noconsole.exe" in content
-                            assert "start \"\"" in content
-                            assert "@echo off" in content
-                            assert "timeout /t 2 /nobreak" in content
+                                script = Path(tmpdir) / "restart_steam.bat"
+                                content = script.read_text()
+                                # Kill section
+                                assert "taskkill /F /IM steam.exe" in content
+                                assert "taskkill /F /IM PluginLoader.exe" in content
+                                assert "taskkill /F /IM PluginLoader_noconsole.exe" in content
+                                # PluginLoader path injected into set command
+                                assert "set \"PLUGIN_LOADER_PATH=C:\\homebrew\\services\\PluginLoader_noconsole.exe\"" in content
+                                assert ":wait_pl" in content
+                                assert "if %COUNT% lss 10 goto :wait_pl" in content
+                                # Steam launch
+                                assert "start \"\" \"C:\\Steam\\steam.exe\"" in content
+                                assert "del \"%~f0\"" in content
+
+    @pytest.mark.asyncio
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only test")
+    async def test_windows_script_skips_plugin_loader_when_not_found(self):
+        """Verifies script skips PluginLoader when path resolver returns None."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("main.decky.DECKY_PLUGIN_SETTINGS_DIR", tmpdir):
+                with patch("main.get_steam_path", return_value="C:\\Steam"):
+                    with patch("main.subprocess.Popen"):
+                        with patch("main.sys.platform", "win32"):
+                            with patch("main.Plugin._resolve_plugin_loader_path",
+                                       return_value=None):
+                                plugin = _plugin_instance()
+                                await plugin.restart_steam()
+
+                                script = Path(tmpdir) / "restart_steam.bat"
+                                content = script.read_text()
+                                # Path variable is set to empty
+                                assert "set \"PLUGIN_LOADER_PATH=\"" in content
+                                # Guard redirects to steam when path is empty
+                                assert "if \"%PLUGIN_LOADER_PATH%\"==\"\" goto :start_steam" in content
+                                # Should still launch Steam
+                                assert "start \"\" \"C:\\Steam\\steam.exe\"" in content
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform == "win32", reason="Linux-only test")
@@ -169,3 +196,33 @@ class TestRestartSteamCleanup:
                 with patch("main.refresh_manifest", return_value=[]):
                     plugin = _plugin_instance()
                     await plugin._main()  # Should not raise
+
+
+class TestResolvePluginLoaderPath:
+    """Tests for Plugin._resolve_plugin_loader_path()."""
+
+    def test_returns_none_when_not_found(self):
+        """Returns None when PluginLoader is not in any known location."""
+        import main
+        from unittest.mock import patch
+
+        with patch("main.Path.home") as mock_home:
+            mock_home.return_value = Path("/nonexistent")
+            result = main.Plugin._resolve_plugin_loader_path()
+            assert result is None
+
+    def test_uses_decky_home_first(self):
+        """Returns decky.DECKY_HOME/services path when both candidates exist."""
+        import main
+        from unittest.mock import patch
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pl_dir = Path(tmpdir) / "services"
+            pl_dir.mkdir(parents=True, exist_ok=True)
+            pl_exe = pl_dir / "PluginLoader_noconsole.exe"
+            pl_exe.touch()
+
+            with patch("main.decky.DECKY_HOME", tmpdir):
+                result = main.Plugin._resolve_plugin_loader_path()
+                assert result == str(pl_exe)

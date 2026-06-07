@@ -9,4 +9,5 @@ if "decky" not in sys.modules:
     mock_decky.DECKY_PLUGIN_NAME = "STPlugin"
     mock_decky.DECKY_PLUGIN_VERSION = "1.0.3"
     mock_decky.DECKY_PLUGIN_SETTINGS_DIR = "/tmp/stplugin"
+    mock_decky.DECKY_HOME = "/home/deck/homebrew"
     sys.modules["decky"] = mock_decky

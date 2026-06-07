@@ -44,6 +44,39 @@ _DEFAULT_SETTINGS = {
     "morrenusApiKey": "",
 }
 
+BAT_TEMPLATE = """@echo off
+timeout /t 2 /nobreak >nul
+taskkill /F /IM steam.exe >nul 2>&1
+taskkill /F /IM PluginLoader.exe >nul 2>&1
+taskkill /F /IM PluginLoader_noconsole.exe >nul 2>&1
+
+:wait_exit
+timeout /t 1 /nobreak >nul
+tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul
+if not errorlevel 1 goto :wait_exit
+tasklist /FI "IMAGENAME eq PluginLoader.exe" 2>nul | find /I "PluginLoader.exe" >nul
+if not errorlevel 1 goto :wait_exit
+tasklist /FI "IMAGENAME eq PluginLoader_noconsole.exe" 2>nul | find /I "PluginLoader_noconsole.exe" >nul
+if not errorlevel 1 goto :wait_exit
+
+:: Start PluginLoader_noconsole.exe (if path was resolved)
+set "PLUGIN_LOADER_PATH=__PLUGIN_LOADER_PATH__"
+if "%PLUGIN_LOADER_PATH%"=="" goto :start_steam
+
+start "" "%PLUGIN_LOADER_PATH%"
+set COUNT=0
+:wait_pl
+timeout /t 1 /nobreak >nul
+tasklist /FI "IMAGENAME eq PluginLoader_noconsole.exe" 2>nul | find /I "PluginLoader_noconsole.exe" >nul
+if not errorlevel 1 goto :start_steam
+set /a COUNT+=1
+if %COUNT% lss 10 goto :wait_pl
+
+:start_steam
+start "" "__STEAM_EXE__"
+del "%~f0"
+"""
+
 
 def _read_settings() -> dict[str, Any]:
     """Read settings from disk, merging with defaults."""
@@ -358,28 +391,38 @@ class Plugin:
         return {"success": True}
 
     @staticmethod
+    def _resolve_plugin_loader_path() -> str | None:
+        """Locate PluginLoader_noconsole.exe dynamically.
+
+        Checks decky.DECKY_HOME first (set by the Decky loader),
+        then falls back to ~/homebrew/services/ (standard Windows install).
+        Returns None if not found — the restart script will skip PluginLoader launch.
+        """
+        candidates = [
+            Path(decky.DECKY_HOME) / "services" / "PluginLoader_noconsole.exe",
+            Path.home() / "homebrew" / "services" / "PluginLoader_noconsole.exe",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
+        return None
+
+    @staticmethod
     def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None:
-        """Write and spawn batch restart script that kills Steam and PluginLoader (Windows)."""
+        """Write and spawn batch restart script that kills Steam and PluginLoader (Windows).
+
+        Injects the resolved PluginLoader_noconsole.exe path into the template.
+        If PluginLoader cannot be found, the script skips launching it and
+        proceeds directly to starting Steam.
+        """
         steam_exe = str(Path(steam_path) / "steam.exe")
+        pl_path = Plugin._resolve_plugin_loader_path()
         script_path = settings_dir / "restart_steam.bat"
-        script_path.write_text(
-            '@echo off\r\n'
-            'timeout /t 2 /nobreak >nul\r\n'
-            'taskkill /F /IM steam.exe >nul 2>&1\r\n'
-            'taskkill /F /IM PluginLoader.exe >nul 2>&1\r\n'
-            'taskkill /F /IM PluginLoader_noconsole.exe >nul 2>&1\r\n'
-            ':waitloop\r\n'
-            'timeout /t 1 /nobreak >nul\r\n'
-            'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul\r\n'
-            'if not errorlevel 1 goto waitloop\r\n'
-            'tasklist /FI "IMAGENAME eq PluginLoader.exe" 2>nul | find /I "PluginLoader.exe" >nul\r\n'
-            'if not errorlevel 1 goto waitloop\r\n'
-            'tasklist /FI "IMAGENAME eq PluginLoader_noconsole.exe" 2>nul | find /I "PluginLoader_noconsole.exe" >nul\r\n'
-            'if not errorlevel 1 goto waitloop\r\n'
-            f'start "" "{steam_exe}"\r\n'
-            'del "%~f0"\r\n',
-            encoding="utf-8",
+        script = (
+            BAT_TEMPLATE.replace("__PLUGIN_LOADER_PATH__", pl_path or "")
+            .replace("__STEAM_EXE__", steam_exe)
         )
+        script_path.write_text(script, encoding="utf-8")
         subprocess.Popen(
             ["cmd.exe", "/c", str(script_path)],
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,

@@ -39,7 +39,8 @@ class Plugin:
     async def get_settings(self) -> dict
     async def set_setting(self, key: str, value: any) -> None
 
-    # Steam restart (kills Steam + PluginLoader + PluginLoader_noconsole)
+    # Steam restart (kills Steam + PluginLoader + PluginLoader_noconsole,
+    #                  then launches PluginLoader_noconsole before Steam)
     async def restart_steam(self) -> dict
 
     # Restart script generation (private)
@@ -47,6 +48,8 @@ class Plugin:
     def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None
     @staticmethod
     def _spawn_restart_linux(settings_dir: Path) -> None
+    @staticmethod
+    def _resolve_plugin_loader_path() -> str | None
 
     # Game search
     async def search_games(self, query: str) -> list[dict]
@@ -75,7 +78,7 @@ class Plugin:
 | `refresh_api_manifest` | — | `ApiSource[]` | Re-fetches + caches |
 | `get_settings` | — | `Settings` | Reads JSON |
 | `set_setting` | `key: str, value: any` | `void` | Type-validated |
-| `restart_steam` | — | `dict` | Returns `{"success": bool, "error?": str}`; kills Steam + PluginLoader + PluginLoader_noconsole, then restarts Steam |
+| `restart_steam` | — | `dict` | Returns `{"success": bool, "error?": str}`; kills Steam + PluginLoader + PluginLoader_noconsole, then starts PluginLoader_noconsole (if found), waits for it to start (max 10s), then restarts Steam |
 | `check_for_updates` | — | `dict` | Checks GitHub for newer plugin version |
 | `install_update` | `asset_url: str` | `dict` | Downloads and applies plugin update |
 | `get_plugin_version` | — | `str` | Returns the current plugin version from `decky.DECKY_PLUGIN_VERSION` |
