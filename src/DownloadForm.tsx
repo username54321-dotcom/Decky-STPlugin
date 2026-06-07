@@ -5,18 +5,18 @@ import {
   DropdownItem,
   staticClasses,
 } from "@decky/ui";
-import { callable } from "@decky/api";
+import { callable, addEventListener, removeEventListener } from "@decky/api";
 import React, { useState, useEffect } from "react";
 import { FaGamepad } from "react-icons/fa";
 import { GameSearchDropdown } from "./download/components/GameSearchDropdown";
 import { useDebouncedSearch } from "./download/hooks/useDebouncedSearch";
-import type { GameSearchResult } from "./shared/types";
-import type { ApiSource } from "./shared/types";
+import type { GameSearchResult, ApiSource, InstalledApp, DownloadProgress } from "./shared/types";
 import { getPendingAppid } from "./shared/navigationState";
 import { CARD } from "./shared/styles";
 
 const getApiSources = callable<[], ApiSource[]>("get_api_sources");
 const getSettings = callable<[], { fastDownload: boolean; morrenusApiKey: string }>("get_settings");
+const getInstalledApps = callable<[], InstalledApp[]>("get_installed_apps");
 
 interface DownloadFormProps {
   onStart: (appid: number, source?: string, imgUrl?: string, name?: string) => void;
@@ -32,6 +32,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedImg, setSelectedImg] = useState("");
   const [imgError, setImgError] = useState(false);
+  const [installedAppids, setInstalledAppids] = useState<number[]>([]);
 
   const { results: searchResults, searching } = useDebouncedSearch(searchQuery);
 
@@ -55,6 +56,22 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
     if (pending !== null) {
       setAppidInput(String(pending));
     }
+  }, []);
+
+  useEffect(() => {
+    getInstalledApps()
+      .then((apps) => setInstalledAppids(apps.map((a) => a.appid)))
+      .catch(() => console.warn("[STPlugin] Failed to fetch installed apps"));
+
+    const unsub = addEventListener<[string, DownloadProgress]>("download_progress", (_taskId, data) => {
+      if (data?.phase === "done") {
+        getInstalledApps()
+          .then((apps) => setInstalledAppids(apps.map((a) => a.appid)))
+          .catch(() => console.warn("[STPlugin] Failed to refresh installed apps after download"));
+      }
+    });
+
+    return () => removeEventListener("download_progress", unsub);
   }, []);
 
   const handleSearchSelect = (result: GameSearchResult) => {
@@ -88,6 +105,7 @@ export function DownloadForm({ onStart }: DownloadFormProps) {
         <PanelSectionRow>
           <GameSearchDropdown
             results={searchResults}
+            installedAppids={installedAppids}
             onSelect={handleSearchSelect}
           />
         </PanelSectionRow>

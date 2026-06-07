@@ -1,7 +1,7 @@
 # API Contracts Specification
 
 > **Living document** — updating this is **critical and not optional**. Update when TypeScript types, callable signatures, or events change.
-> Last updated: 2026-06-05
+> Last updated: 2026-06-07
 
 ## Overview
 

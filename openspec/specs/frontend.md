@@ -1,7 +1,7 @@
 # Frontend Specification
 
 > **Living document** — updating this is **critical and not optional**. Update when React components, Decky UI patterns, or hooks change.
-> Last updated: 2026-06-06
+> Last updated: 2026-06-07
 
 ## Overview
 
@@ -57,7 +57,7 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 
 ### DownloadPanel
 - Search input (appid or game name, resolved via `get_app_name`)
-- Game name search dropdown (Steam `/search/suggest` proxy with debounced dropdown)
+- Game name search dropdown (Steam `/search/suggest` proxy with debounced dropdown, shows "Installed" badge for already-installed apps)
 - API source picker dropdown (hidden when `fastDownload` is ON)
 - Download button
 - Opens `DownloadModal` via `showModal()` on start

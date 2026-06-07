@@ -5,10 +5,11 @@ import { COLOR, BORDER } from "../../shared/styles";
 
 export interface GameSearchDropdownProps {
   results: GameSearchResult[];
+  installedAppids: number[];
   onSelect: (result: GameSearchResult) => void;
 }
 
-export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProps) {
+export function GameSearchDropdown({ results, installedAppids = [], onSelect }: GameSearchDropdownProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   if (results.length === 0) {
@@ -97,6 +98,23 @@ export function GameSearchDropdown({ results, onSelect }: GameSearchDropdownProp
             >
               {result.name}
             </span>
+            {installedAppids.includes(result.id) && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: "11px",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  color: "#5cb85c",
+                  background: "rgba(92, 184, 92, 0.15)",
+                  fontWeight: 600,
+                  letterSpacing: "0.5px",
+                  flexShrink: 0,
+                }}
+              >
+                Installed
+              </span>
+            )}
           </div>
         </Focusable>
       ))}
