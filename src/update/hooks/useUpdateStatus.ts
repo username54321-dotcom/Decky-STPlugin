@@ -44,10 +44,6 @@ export function useUpdateStatus() {
                 assetUrl: info.asset_url,
                 checkedAt: info.checked_at ?? prev.checkedAt,
             }));
-            toaster.toast({
-                title: "STPlugin",
-                body: `Update v${info.latest_version} available — Open plugin to install`,
-            });
         };
 
         const handleUpdateInstalled = () => {

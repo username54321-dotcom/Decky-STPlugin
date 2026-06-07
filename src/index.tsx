@@ -2,12 +2,12 @@ import {
   PanelSection,
   PanelSectionRow,
   ButtonItem,
+  Field,
   Navigation,
   staticClasses,
   ControlsList,
   ErrorBoundary,
   showModal,
-  Focusable,
 } from "@decky/ui";
 import {
   definePlugin,
@@ -23,7 +23,7 @@ import { UpdateInstalledModal } from "./update/components/UpdateInstalledModal";
 import { DownloadPanel } from "./DownloadPanel";
 import { InstalledApps } from "./InstalledApps";
 import { SettingsPanel } from "./SettingsPanel";
-import { SPACING, BORDER, BUTTON } from "./shared/styles";
+import { SPACING, BORDER } from "./shared/styles";
 
 function MainPanel() {
   const { status: updateStatus, install } = useUpdateStatus();
@@ -32,73 +32,43 @@ function MainPanel() {
   return (
     <div style={{ paddingTop: SPACING.panelTopPadding }}>
       {updateStatus.available && updateStatus.latestVersion && !bannerDismissed && (
-        <div style={{
-          background: "rgba(0, 255, 0, 0.1)",
-          border: "1px solid rgba(0, 255, 0, 0.3)",
-          borderRadius: "4px",
-          padding: "12px",
-          margin: "8px 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <div>
-            <span style={{ fontWeight: "bold" }}>Update Available: v{updateStatus.latestVersion}</span>
-          </div>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {updateStatus.releaseUrl && (
-              <Focusable onActivate={() => { window.open(updateStatus.releaseUrl!, "_blank"); }}>
-                <button
-                  style={{
-                    ...BUTTON.base,
-                    ...BUTTON.secondary,
-                  } as React.CSSProperties}
-                  onClick={() => {
-                    window.open(updateStatus.releaseUrl!, "_blank");
-                  }}
-                >
-                  View
-                </button>
-              </Focusable>
-            )}
-            <Focusable onActivate={updateStatus.installing ? undefined : async () => {
-              const installed = await install();
-              if (installed && updateStatus.latestVersion) {
-                showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
-              }
-            }}>
-              <button
-                style={{
-                  ...BUTTON.base,
-                  ...(updateStatus.installing
-                    ? BUTTON.disabled
-                    : BUTTON.primary
-                  ),
-                } as React.CSSProperties}
-                onClick={async () => {
-                  const installed = await install();
-                  if (installed && updateStatus.latestVersion) {
-                    showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
-                  }
-                }}
-                disabled={updateStatus.installing}
+        <PanelSection title="Update Available">
+          <PanelSectionRow>
+            <Field
+              label={`v${updateStatus.latestVersion}`}
+              description="A new version of STPlugin is available"
+            />
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              disabled={updateStatus.installing}
+              onClick={async () => {
+                const installed = await install();
+                if (installed && updateStatus.latestVersion) {
+                  showModal(<UpdateInstalledModal version={updateStatus.latestVersion} />);
+                }
+              }}
+            >
+              {updateStatus.installing ? "Installing..." : "Install Update"}
+            </ButtonItem>
+          </PanelSectionRow>
+          {updateStatus.releaseUrl && (
+            <PanelSectionRow>
+              <ButtonItem
+                layout="below"
+                onClick={() => window.open(updateStatus.releaseUrl!, "_blank")}
               >
-                {updateStatus.installing ? "Installing..." : "Install"}
-              </button>
-            </Focusable>
-            <Focusable onActivate={() => setBannerDismissed(true)}>
-              <button
-                style={{
-                  ...BUTTON.base,
-                  ...BUTTON.secondary,
-                } as React.CSSProperties}
-                onClick={() => setBannerDismissed(true)}
-              >
-                Dismiss
-              </button>
-            </Focusable>
-          </div>
-        </div>
+                View Release
+              </ButtonItem>
+            </PanelSectionRow>
+          )}
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={() => setBannerDismissed(true)}>
+              Dismiss
+            </ButtonItem>
+          </PanelSectionRow>
+        </PanelSection>
       )}
 
       <PanelSection title={PLUGIN_NAME}>

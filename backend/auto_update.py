@@ -15,7 +15,6 @@ import decky
 
 GITHUB_OWNER = "username54321-dotcom"
 GITHUB_REPO = "Decky-STPlugin"
-UPDATE_CHECK_INTERVAL = 30  # temporary: 30s for dev; change to 1800 before production release
 
 
 @dataclass
