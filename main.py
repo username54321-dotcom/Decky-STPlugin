@@ -331,12 +331,13 @@ class Plugin:
     # ── Steam Restart ──
 
     async def restart_steam(self) -> dict[str, Any]:
-        """Kill and restart Steam via a detached platform script.
+        """Kill Steam and PluginLoader processes, then restart via a detached platform script.
 
-        Writes a PowerShell (Windows) or bash (Linux) script to the
+        Writes a batch (Windows) or bash (Linux) script to the
         plugin settings directory, spawns it as a fully detached
         process, and returns immediately. The script survives Steam
-        shutdown and relaunches Steam afterward, then exits.
+        and PluginLoader shutdown, waits for all processes to exit,
+        then relaunches Steam.
         """
         steam_path = get_steam_path()
         if not steam_path:
@@ -358,16 +359,22 @@ class Plugin:
 
     @staticmethod
     def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None:
-        """Write and spawn batch restart script (Windows)."""
+        """Write and spawn batch restart script that kills Steam and PluginLoader (Windows)."""
         steam_exe = str(Path(steam_path) / "steam.exe")
         script_path = settings_dir / "restart_steam.bat"
         script_path.write_text(
             '@echo off\r\n'
             'timeout /t 2 /nobreak >nul\r\n'
             'taskkill /F /IM steam.exe >nul 2>&1\r\n'
+            'taskkill /F /IM PluginLoader.exe >nul 2>&1\r\n'
+            'taskkill /F /IM PluginLoader_noconsole.exe >nul 2>&1\r\n'
             ':waitloop\r\n'
             'timeout /t 1 /nobreak >nul\r\n'
             'tasklist /FI "IMAGENAME eq steam.exe" 2>nul | find /I "steam.exe" >nul\r\n'
+            'if not errorlevel 1 goto waitloop\r\n'
+            'tasklist /FI "IMAGENAME eq PluginLoader.exe" 2>nul | find /I "PluginLoader.exe" >nul\r\n'
+            'if not errorlevel 1 goto waitloop\r\n'
+            'tasklist /FI "IMAGENAME eq PluginLoader_noconsole.exe" 2>nul | find /I "PluginLoader_noconsole.exe" >nul\r\n'
             'if not errorlevel 1 goto waitloop\r\n'
             f'start "" "{steam_exe}"\r\n'
             'del "%~f0"\r\n',
@@ -383,12 +390,14 @@ class Plugin:
 
     @staticmethod
     def _spawn_restart_linux(settings_dir: Path) -> None:
-        """Write and spawn bash restart script (Linux)."""
+        """Write and spawn bash restart script that kills Steam and PluginLoader (Linux)."""
         script_path = settings_dir / "restart_steam.sh"
         script_path.write_text(
             "#!/bin/bash\n"
             "sleep 3\n"
             "pkill -9 steam 2>/dev/null\n"
+            "pkill -9 PluginLoader 2>/dev/null\n"
+            "pkill -9 PluginLoader_noconsole 2>/dev/null\n"
             "sleep 2\n"
             "steam &\n"
         )

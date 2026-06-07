@@ -1,7 +1,7 @@
 # Backend Specification
 
 > **Living document** — updating this is **critical and not optional**. Update when backend architecture, IPC methods, or Python modules change.
-> Last updated: 2026-06-05
+> Last updated: 2026-06-07
 
 ## Overview
 
@@ -39,8 +39,14 @@ class Plugin:
     async def get_settings(self) -> dict
     async def set_setting(self, key: str, value: any) -> None
 
-    # Steam restart
+    # Steam restart (kills Steam + PluginLoader + PluginLoader_noconsole)
     async def restart_steam(self) -> dict
+
+    # Restart script generation (private)
+    @staticmethod
+    def _spawn_restart_windows(steam_path: str, settings_dir: Path) -> None
+    @staticmethod
+    def _spawn_restart_linux(settings_dir: Path) -> None
 
     # Game search
     async def search_games(self, query: str) -> list[dict]
@@ -69,7 +75,7 @@ class Plugin:
 | `refresh_api_manifest` | — | `ApiSource[]` | Re-fetches + caches |
 | `get_settings` | — | `Settings` | Reads JSON |
 | `set_setting` | `key: str, value: any` | `void` | Type-validated |
-| `restart_steam` | — | `dict` | Returns `{"success": bool, "error?": str}`; platform-specific process restart |
+| `restart_steam` | — | `dict` | Returns `{"success": bool, "error?": str}`; kills Steam + PluginLoader + PluginLoader_noconsole, then restarts Steam |
 | `check_for_updates` | — | `dict` | Checks GitHub for newer plugin version |
 | `install_update` | `asset_url: str` | `dict` | Downloads and applies plugin update |
 | `get_plugin_version` | — | `str` | Returns the current plugin version from `decky.DECKY_PLUGIN_VERSION` |

@@ -72,6 +72,10 @@ class TestRestartSteam:
                             content = script.read_text()
                             assert "steam.exe" in content
                             assert "taskkill /F /IM steam.exe" in content
+                            assert "taskkill /F /IM PluginLoader.exe" in content
+                            assert "taskkill /F /IM PluginLoader_noconsole.exe" in content
+                            assert "PluginLoader.exe" in content
+                            assert "PluginLoader_noconsole.exe" in content
                             assert "start \"\"" in content
                             assert "@echo off" in content
                             assert "timeout /t 2 /nobreak" in content
@@ -92,6 +96,8 @@ class TestRestartSteam:
                             content = script.read_text()
                             assert "#!/bin/bash" in content
                             assert "pkill -9 steam" in content
+                            assert "pkill -9 PluginLoader" in content
+                            assert "pkill -9 PluginLoader_noconsole" in content
                             assert "steam &" in content
 
     @pytest.mark.asyncio
