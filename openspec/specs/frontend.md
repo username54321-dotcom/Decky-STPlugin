@@ -55,6 +55,22 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 
 ## QAM Panels
 
+#### MainPanel (Dashboard)
+**File:** `src/MainPanel.tsx`
+
+A status dashboard shown at the root QAM route (`/stplugin`).
+
+**Zones:**
+1. **Header** — plugin name, version number, update-available badge (uses `useUpdateStatus` hook)
+2. **StatsCard** (`src/main/StatsCard.tsx`) — installed scripts count from `get_installed_apps()` callable. States: loaded count, "No scripts installed" (0), "—" (loading/error)
+3. **NavTile** ×3 (`src/main/NavTile.tsx`) — styled navigation tiles with icon, title, description, and `Focusable` gamepad support:
+   - Download Lua Script → `/stplugin/download`
+   - Installed Scripts → `/stplugin/installed`
+   - Settings → `/stplugin/settings`
+4. **Footer** — `RestartButton` component, separated by divider
+
+**Dependencies:** `useUpdateStatus`, `callable("get_installed_apps")`, `RestartButton`, `Focusable`, `Navigation`
+
 ### DownloadPanel
 - Search input (appid or game name, resolved via `get_app_name`)
 - Game name search dropdown (Steam `/search/suggest` proxy with debounced dropdown, shows "Installed" badge for already-installed apps)
@@ -122,8 +138,37 @@ Uses `findModuleExport` + `afterPatch` to inject a button into Steam's game page
 | `<ToggleField>` | Boolean settings (fastDownload) |
 | `<TextField>` | String settings (morrenusApiKey) |
 | `<ButtonItem>` | Action buttons (refresh, restart, download) |
+| `<DropdownItem>` | Dropdown selectors (API source picker) |
 | `<PanelSection>` | QAM section grouping |
 | `<PanelSectionRow>` | QAM row layout |
+| `<ModalRoot>` + `<DialogHeader>` + `<DialogBody>` + `<DialogFooter>` | Custom modals |
+| `<DialogButton>` / `<DialogButtonPrimary>` | Modal action buttons (secondary/primary) |
+| `<ConfirmModal>` | Simple confirmation dialogs |
+| `<ProgressBarWithInfo>` / `<ProgressBar>` | Download progress display |
+| `<Spinner>` | Loading indicator |
+| `<Focusable>` | **Only for raw HTML interactive elements** (wraps `<button>`, clickable `<div>`, custom controls that lack Decky-native components) |
+| `<Navigation>` | QAM route navigation |
+| `showModal()` | Modal opener function |
+| `staticClasses` | Steam CSS class objects for custom element styling |
+
+### Focusable Rules
+
+- **Do** wrap raw HTML interactive elements (`<button>`, clickable `<div>`, custom input) in `<Focusable>` with `onActivate` handler and `flow-children` layout prop
+- **Do NOT** wrap Decky-native components (`ButtonItem`, `ToggleField`, etc.) in Focusable — they are already focus-managed
+- **Do NOT** wrap decorative/presentational elements (static text, images, icons, layout containers) in Focusable
+- Use `flow-children="column"` for vertical stacking of Focusable children
+- `onCancel` callback handles B button press; `onActivate` handles A button press
+
+### Steam CSS Classes
+
+Import typed CSS class objects from `@decky/ui` for consistent styling when building custom elements:
+
+```tsx
+import { staticClasses, quickAccessMenuClasses, gamepadDialogClasses, focusRingClasses } from "@decky/ui";
+
+// Applies Steam's green focus animation class
+<div className={quickAccessMenuClasses["ItemFocusAnim-green"]}>...</div>
+```
 
 ## Related Specs
 

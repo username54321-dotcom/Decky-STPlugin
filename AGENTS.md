@@ -31,15 +31,15 @@ Always code for Windows first with a cross-platform fallback. When in doubt, cho
 
 ## Key Reference Files
 
-Before making any code change or design decision, read these:
+Before making any code change or design decision, read the files relevant to the current task. Do not read files unrelated to what you are working on.
 
 | Priority | File | Purpose |
 |----------|------|---------|
-| 🔴 **Always** | `openspec/project.md` | Project overview, conventions, scope |
-| 🔴 **Always** | `openspec/specs/architecture.md` | Overall plugin structure, file layout |
-| 🔴 **Always** | `openspec/specs/backend.md` | Python modules, IPC methods, error handling |
-| 🔴 **Always** | `openspec/specs/frontend.md` | React patterns, Decky UI components |
-| 🔴 **Always** | `openspec/specs/api-contracts.md` | TypeScript types, callable signatures |
+| 🔴 **If task touches this area** | `openspec/project.md` | Project overview, conventions, scope |
+| 🔴 **If task touches this area** | `openspec/specs/architecture.md` | Overall plugin structure, file layout |
+| 🔴 **If task touches this area** | `openspec/specs/backend.md` | Python modules, IPC methods, error handling |
+| 🔴 **If task touches this area** | `openspec/specs/frontend.md` | React patterns, Decky UI components |
+| 🔴 **If task touches this area** | `openspec/specs/api-contracts.md` | TypeScript types, callable signatures |
 | 🟡 **When unsure** | `docs/references/decky-loader-plugin-development.md` | Decky API reference |
 | 🟡 **When unsure** | `./ltsteamplugin/project_analysis.md` | Millennium source analysis |
 
@@ -73,6 +73,10 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for living 
 5. **No direct DOM manipulation in GamepadUI.** Use Decky's **route patching** (`routerHook.addPatch`) for React-rendered UI injection. Route patching is the official Decky pattern (see [Decky Wiki](https://wiki.deckbrew.xyz/en/plugin-dev/route-patching) and ProtonDB Badges plugin). **Avoid `findModuleExport` for UI injection** — it is fragile, breaks on Steam updates, and is deprecated in this project. The `findModuleExport` approach in `docs/references/decky-loader-plugin-development.md` is marked LEGACY for reference only.
 6. **Windows-first, always fallback.** Code for Windows Decky Loader as primary target. Always provide cross-platform fallbacks using `pathlib.Path` and OS-agnostic APIs.
 7. **Always fetch latest Decky docs via ctx7.** If asked a Decky-specific question, or whenever unsure about any Decky API, pattern, or concept, always run `npx ctx7@latest library decky-loader "<question>"` and `npx ctx7@latest docs <id> "<question>"` before answering or writing code. Do not rely on training data for Decky API details — it changes frequently.
+8. **Prefer Decky native UI components.** Use `@decky/ui` components (`ButtonItem`, `ToggleField`, `TextField`, `DropdownItem`, `PanelSection`, `PanelSectionRow`, `DialogButton`, `DialogButtonPrimary`, `DialogHeader`, `DialogBody`, `DialogFooter`, `ConfirmModal`, `ModalRoot`, `ProgressBarWithInfo`, `Spinner`) over raw HTML elements whenever they exist. These components handle gamepad focus, Steam styling, and accessibility natively.
+9. **Wrap non-native interactive elements in `<Focusable>`.** When using raw HTML interactive elements (`<button>`, clickable `<div>`, custom input), wrap them in `<Focusable>` from `@decky/ui`. See `openspec/specs/frontend.md` → **Focusable Rules** for exact usage. Decky-native components (`ButtonItem`, etc.) are already Focusable-aware — do NOT double-wrap them.
+10. **Use `staticClasses` for Steam-consistent styling of custom elements.** When building custom UI outside Decky components, import `staticClasses` (or specific class groups like `quickAccessMenuClasses`, `gamepadDialogClasses`, `focusRingClasses`) from `@decky/ui` to apply native Steam CSS classes to your elements.
+11. **Do NOT wrap decorative/presentational elements in Focusable.** Only interactive elements that need gamepad focus management require Focusable. Static text, images, icons, and layout containers should remain unwrapped.
 
 ## Key Differences: Millennium → Decky
 

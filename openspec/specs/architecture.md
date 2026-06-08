@@ -15,11 +15,16 @@ The plugin has three layers:
 ```
 Decky-STPlugin/
 ├── src/                           # TypeScript/React frontend
-│   ├── index.tsx                  # definePlugin() entry + QAM router + IPC bindings
+│   ├── index.tsx                  # definePlugin() entry + QAM router + IPC bindings (thin, ~35 lines)
+│   ├── MainPanel.tsx              # QAM status dashboard
 │   ├── DownloadPanel.tsx          # QAM download panel
 │   ├── DownloadForm.tsx           # Download form with search
 │   ├── InstalledApps.tsx          # QAM installed apps panel
 │   ├── SettingsPanel.tsx          # QAM settings panel
+│   ├── main/
+│   │   ├── NavTile.tsx            # Reusable QAM navigation tile
+│   │   ├── StatsCard.tsx          # Installed scripts count display
+│   │   └── styles.ts              # MainPanel style constants
 │   ├── download/
 │   │   ├── components/
 │   │   │   ├── DownloadModal.tsx
