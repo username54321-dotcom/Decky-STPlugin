@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   PanelSection,
+  PanelSectionRow,
   Navigation,
 } from "@decky/ui";
 import { callable } from "@decky/api";
@@ -47,24 +48,30 @@ export function MainPanel() {
       <StatsCard installedCount={installedCount} />
 
       <PanelSection title="Quick Actions">
-        <NavTile
-          icon={<FaDownload />}
-          title="Download Lua Script"
-          description="Search & install scripts"
-          route={ROUTES.download}
-        />
-        <NavTile
-          icon={<FaBox />}
-          title="Installed Scripts"
-          description="Manage & re-download"
-          route={ROUTES.installed}
-        />
-        <NavTile
-          icon={<FaCog />}
-          title="Settings"
-          description="Configure plugin options"
-          route={ROUTES.settings}
-        />
+        <PanelSectionRow>
+          <NavTile
+            icon={<FaDownload />}
+            title="Download Lua Script"
+            description="Search & install scripts"
+            route={ROUTES.download}
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <NavTile
+            icon={<FaBox />}
+            title="Installed Scripts"
+            description="Manage & re-download"
+            route={ROUTES.installed}
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <NavTile
+            icon={<FaCog />}
+            title="Settings"
+            description="Configure plugin options"
+            route={ROUTES.settings}
+          />
+        </PanelSectionRow>
       </PanelSection>
 
       <div style={FOOTER.container}>

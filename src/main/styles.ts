@@ -55,42 +55,6 @@ export const STATS_CARD = {
   } as React.CSSProperties,
 };
 
-export const NAV_TILE = {
-  container: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px",
-    borderRadius: BORDER.cardRadius,
-    cursor: "pointer",
-  } as React.CSSProperties,
-  icon: {
-    fontSize: "22px",
-    color: COLOR.muted,
-    flexShrink: 0,
-    width: "28px",
-    textAlign: "center" as const,
-  } as React.CSSProperties,
-  textBlock: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "2px",
-    flex: 1,
-  } as React.CSSProperties,
-  title: {
-    fontSize: "14px",
-    fontWeight: "bold" as const,
-  } as React.CSSProperties,
-  description: {
-    fontSize: "12px",
-    color: COLOR.muted,
-  } as React.CSSProperties,
-  divider: {
-    borderTop: BORDER.divider,
-    margin: 0,
-  } as React.CSSProperties,
-};
-
 export const FOOTER = {
   container: {
     marginTop: SPACING.sectionGap,
