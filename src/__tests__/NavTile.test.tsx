@@ -4,8 +4,17 @@ import { render, fireEvent } from "@testing-library/react";
 import { NavTile } from "../main/NavTile";
 
 vi.mock("@decky/ui", () => ({
-  Focusable: ({ onActivate, children, style }: any) => (
-    <div onClick={onActivate} style={style}>{children}</div>
+  Focusable: ({ onActivate, children, style, onMouseEnter, onMouseLeave, onFocus, onBlur }: any) => (
+    <div
+      onClick={onActivate}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      style={style}
+    >
+      {children}
+    </div>
   ),
   Navigation: {
     Navigate: vi.fn(),
@@ -41,5 +50,25 @@ describe("NavTile", () => {
     const focusable = container.firstElementChild!;
     fireEvent.click(focusable);
     expect(Navigation.Navigate).toHaveBeenCalledWith("/stplugin/download");
+  });
+
+  it("shows background highlight on mouse enter and removes on mouse leave", () => {
+    const { container } = render(
+      <NavTile
+        icon={<span data-testid="icon">📥</span>}
+        title="Download"
+        description="Get scripts"
+        route="/test"
+      />
+    );
+    const focusable = container.firstElementChild as HTMLElement;
+
+    expect(focusable.style.background).toBe("transparent");
+
+    fireEvent.mouseEnter(focusable);
+    expect(focusable.style.background).toBe("var(--gpBackgroundLight)");
+
+    fireEvent.mouseLeave(focusable);
+    expect(focusable.style.background).toBe("transparent");
   });
 });
